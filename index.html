@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="famicom" data-mode="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#0d0d12" />
+    <meta name="description" content="FC Arcade — 本地 NES/红白机游戏合集，纯浏览器运行，数据全部保存在本地。" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>FC Arcade · 红白机游戏合集</title>
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" as="font" type="font/woff2" href="/fonts/PressStart2P.woff2" crossorigin />
+
+    <script>
+      // 在首屏渲染前套用主题，避免闪白
+      ;(() => {
+        try {
+          const raw = localStorage.getItem('fc-arcade-settings')
+          if (!raw) return
+          const s = JSON.parse(raw)?.state?.settings
+          if (s?.themeId) document.documentElement.dataset.theme = s.themeId
+          if (s?.mode && s.mode !== 'system') document.documentElement.dataset.mode = s.mode
+          else if (s?.mode === 'system') {
+            document.documentElement.dataset.mode = window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark'
+          }
+        } catch {
+          /* 忽略 */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

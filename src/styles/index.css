@@ -1,0 +1,468 @@
+@import 'tailwindcss';
+@import './fonts.css';
+
+/*
+ * FC Arcade 设计系统
+ * ------------------------------------------------------------------
+ * 颜色 / 圆角 / 特效强度全部走 CSS 变量，真实值由 src/theme 在模块加载期
+ * 生成一张 13×2 的规则表注入 <style id="fc-theme-vars">，靠 <html data-theme data-mode>
+ * 命中。那张表是「无层」样式，优先级天然高于这里的 @layer theme / @layer base，
+ * 所以下面这些值只是兜底（等于 famicom 暗色），用来保证 Tailwind 能生成对应的工具类。
+ *
+ * 组件里请一律用 token（bg-surface / text-muted / border-glass-border）或
+ * var(--color-*)，不要写死十六进制，否则换主题时那块颜色会卡住不动。
+ */
+
+/* 明暗不跟随系统，跟随 <html data-mode>，由 ThemeProvider 写入 */
+@custom-variant dark (&:where([data-mode='dark'], [data-mode='dark'] *));
+@custom-variant light (&:where([data-mode='light'], [data-mode='light'] *));
+
+@theme {
+  /* ---- 颜色 ---- */
+  --color-bg: #14100f;
+  --color-bg-alt: #241715;
+  --color-surface: #201917;
+  --color-surface-alt: #2c2320;
+  --color-glass: rgb(255 238 226 / 7%);
+  --color-glass-border: rgb(255 214 196 / 16%);
+  --color-border: rgb(255 214 196 / 12%);
+  --color-text: #f8f1e7;
+  --color-text-muted: #c6b8a9;
+  --color-text-faint: #96877a;
+  --color-accent: #f0242f;
+  --color-accent-alt: #f5c518;
+  --color-on-accent: #1d0304;
+  --color-success: #5ec26a;
+  --color-warning: #f5b833;
+  --color-danger: #ff5f5f;
+  --color-shadow: rgb(0 0 0 / 55%);
+
+  /* 别名：让 text-muted / text-faint / bg-glass 这些短名字能直接用 */
+  --color-muted: var(--color-text-muted);
+  --color-faint: var(--color-text-faint);
+  --color-accent-soft: color-mix(in oklab, var(--color-accent) 14%, transparent);
+  --color-accent-line: color-mix(in oklab, var(--color-accent) 42%, transparent);
+
+  /* ---- 圆角（覆盖 Tailwind 默认，跟着主题走） ---- */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-huge: 32px;
+
+  /* ---- 字体 ---- */
+  --font-pixel:
+    'Press Start 2P', 'Silkscreen', ui-monospace, 'PingFang SC', 'Microsoft YaHei', monospace;
+  --font-pixel-cn:
+    'Press Start 2P', 'Silkscreen', 'PingFang SC', 'Hiragino Sans GB', 'Source Han Sans SC',
+    'Noto Sans CJK SC', 'Microsoft YaHei', sans-serif;
+  --font-ui:
+    system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei',
+    'Source Han Sans SC', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- 玻璃模糊 ---- */
+  --blur-glass: var(--glass-blur);
+
+  /* ---- 阴影 ---- */
+  --shadow-glass:
+    0 8px 32px -12px var(--color-shadow), inset 0 1px 0 0 rgb(255 255 255 / 10%),
+    inset 0 -1px 0 0 rgb(0 0 0 / 6%);
+  --shadow-lift: 0 20px 48px -16px var(--color-shadow), 0 4px 12px -6px var(--color-shadow);
+  --shadow-glow:
+    0 0 calc(20px * var(--glow)) color-mix(in oklab, var(--color-accent) calc(var(--glow) * 45%), transparent);
+  --shadow-pixel: 4px 4px 0 0 var(--color-shadow);
+
+  /* ---- 缓动 ---- */
+  --ease-pixel: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-snap: cubic-bezier(0.2, 0.9, 0.25, 1);
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ---- 动画 ---- */
+  --animate-shimmer: fc-shimmer 1.6s linear infinite;
+  --animate-blink: fc-blink 1.06s steps(2, jump-none) infinite;
+  --animate-float: fc-float 6s ease-in-out infinite;
+  --animate-spin-step: fc-spin 1s steps(8, end) infinite;
+
+  @keyframes fc-shimmer {
+    from {
+      background-position: -160% 0;
+    }
+    to {
+      background-position: 160% 0;
+    }
+  }
+  @keyframes fc-blink {
+    0% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.25;
+    }
+  }
+  @keyframes fc-float {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+  @keyframes fc-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+}
+
+/* 非 token 类的运行时变量：主题表会覆盖这些兜底值 */
+@layer base {
+  :root {
+    --glass-blur: 16px;
+    --scanline-opacity: 0.08;
+    --noise-opacity: 0.1;
+    --glow: 0.35;
+    /* 移动端安全区，供 Sheet / 虚拟手柄用 */
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-top: env(safe-area-inset-top, 0px);
+    color-scheme: dark light;
+  }
+
+  * {
+    min-width: 0;
+  }
+
+  html {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-ui);
+    font-size: 15px;
+    line-height: 1.6;
+    font-feature-settings:
+      'kern' 1,
+      'liga' 1,
+      'tnum' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+  }
+
+  /* 背景光晕：给玻璃层提供可以被模糊、被折射的东西 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(120% 85% at 8% -12%, var(--color-bg-alt) 0%, transparent 58%),
+      radial-gradient(
+        95% 65% at 102% 2%,
+        color-mix(in oklab, var(--color-accent) calc(14% * var(--glow)), transparent) 0%,
+        transparent 55%
+      ),
+      radial-gradient(
+        80% 55% at 50% 108%,
+        color-mix(in oklab, var(--color-accent-alt) calc(11% * var(--glow)), transparent) 0%,
+        transparent 60%
+      ),
+      var(--color-bg);
+  }
+
+  /* 全局 CRT 玻璃罩。pointer-events:none，只是看着像老屏幕 */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: var(--scanline-opacity);
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 65%) 0,
+      rgb(0 0 0 / 65%) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-on-accent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  /* 像素字体不要被抗锯齿糊掉。只作用于拉丁像素字面，
+     中文走的是系统字体，关掉平滑会变毛边，所以单独放开 */
+  .font-pixel {
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: unset;
+    font-synthesis: none;
+    letter-spacing: 0.04em;
+  }
+
+  .font-pixel-cn {
+    font-synthesis: none;
+    letter-spacing: 0.02em;
+  }
+
+  /* 输入类控件在 iOS 上会被放大，锁死到 16px 起 */
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  hr {
+    border-color: var(--color-border);
+  }
+
+  /* ---- 滚动条：跟主题走 ---- */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--color-text-faint) 45%, transparent) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: color-mix(in oklab, var(--color-text-faint) 40%, transparent);
+    border: 2px solid transparent;
+    background-clip: content-box;
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(in oklab, var(--color-accent) 65%, transparent);
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* 工具类                                                              */
+/* ------------------------------------------------------------------ */
+
+/** 液态玻璃：半透明 + 背景模糊 + 描边 + 内高光 */
+@utility glass {
+  background-color: var(--color-glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.5);
+  border: 1px solid var(--color-glass-border);
+  box-shadow: var(--shadow-glass);
+}
+
+/** 更实一点的玻璃，用在需要压住内容的浮层（Dialog / Popover / 导航栏） */
+@utility glass-strong {
+  background-color: color-mix(in oklab, var(--color-surface) 78%, transparent);
+  backdrop-filter: blur(calc(var(--glass-blur) * 1.6)) saturate(1.7);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 1.6)) saturate(1.7);
+  border: 1px solid var(--color-glass-border);
+  box-shadow:
+    var(--shadow-lift),
+    inset 0 1px 0 0 rgb(255 255 255 / 12%);
+}
+
+/** 像素风阶梯边框：四条边各偏移一格，四个角自然缺口，就是 8bit 那种描边 */
+@utility pixel-border {
+  --pixel-size: 3px;
+  --pixel-color: var(--color-accent);
+
+  box-shadow:
+    0 calc(var(--pixel-size) * -1) 0 0 var(--pixel-color),
+    0 var(--pixel-size) 0 0 var(--pixel-color),
+    calc(var(--pixel-size) * -1) 0 0 0 var(--pixel-color),
+    var(--pixel-size) 0 0 0 var(--pixel-color);
+}
+
+/** 像素风立体块：右下投影是硬边的，没有羽化 */
+@utility pixel-shadow {
+  box-shadow: var(--shadow-pixel);
+}
+
+/** CRT 扫描线叠加。挂在需要「屏幕感」的容器上 */
+@utility scanlines {
+  position: relative;
+  isolation: isolate;
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: calc(var(--scanline-opacity) * 2.2);
+    background: repeating-linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 70%) 0,
+      rgb(0 0 0 / 70%) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+  }
+}
+
+/** SVG feTurbulence 噪点，给纯色面板加一层「屏幕颗粒」 */
+@utility noise {
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    border-radius: inherit;
+    opacity: var(--noise-opacity);
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  }
+}
+
+/** 霓虹字。发光强度跟主题的 --glow 走，gameboy 这种关掉发光的主题会自动近似无效果 */
+@utility text-glow {
+  text-shadow:
+    0 0 calc(6px * var(--glow)) color-mix(in oklab, currentcolor calc(var(--glow) * 60%), transparent),
+    0 0 calc(18px * var(--glow)) color-mix(in oklab, currentcolor calc(var(--glow) * 35%), transparent);
+}
+
+/** accent 光晕，用在选中态 / 主按钮 */
+@utility accent-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+/** 位图缩放不插值，封面和模拟器画面都要 */
+@utility pixel-crisp {
+  image-rendering: pixelated;
+}
+
+/** 统一的键盘焦点环 */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+/** 骨架屏扫光 */
+@utility shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-text) 10%, transparent) 42%,
+    transparent 64%
+  );
+  background-size: 220% 100%;
+  animation: var(--animate-shimmer);
+}
+
+/** 移动端最小触摸目标 */
+@utility tap-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+/* ------------------------------------------------------------------ */
+/* 主题切换动画                                                        */
+/* ------------------------------------------------------------------ */
+
+/*
+ * 首选 View Transitions：旧帧铺底不动，新帧用 clip-path 从点击处圆形扩散。
+ * 具体的 circle() 关键帧由 src/theme/transition.ts 用 Element.animate 打上去，
+ * 这里只负责关掉浏览器默认的交叉淡入淡出并排好层级。
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 2;
+}
+
+/* 降级路径：不支持 View Transitions 的浏览器，切换瞬间给全局挂 300ms 颜色过渡 */
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition:
+    background-color 300ms ease,
+    background-image 300ms ease,
+    border-color 300ms ease,
+    color 300ms ease,
+    fill 300ms ease,
+    stroke 300ms ease,
+    box-shadow 300ms ease,
+    text-shadow 300ms ease !important;
+}
+
+/* ------------------------------------------------------------------ */
+/* 无障碍                                                              */
+/* ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *::before,
+  .theme-transition *::after {
+    transition: none !important;
+  }
+}
+
+/* 屏幕阅读器专用文本 */
+.sr-only-focusable:not(:focus):not(:focus-within) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
