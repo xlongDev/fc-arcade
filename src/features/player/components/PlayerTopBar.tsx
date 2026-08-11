@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 
 import { Badge, IconButton } from '@/components/ui'
-import { IconArrowLeft, IconFullscreen, IconFullscreenExit } from '@/components/icons'
+import { IconArrowLeft, IconFullscreen, IconFullscreenExit, IconRefresh } from '@/components/icons'
 import { SPRING } from '@/features/common/motion'
 import type { GameView } from '@/types/game'
 import { displaySubtitle, displayTitle } from '@/features/common/lib/gameDisplay'
@@ -14,8 +14,10 @@ interface Props {
   fullscreen: boolean
   fullscreenSupported: boolean
   reduceMotion: boolean
+  switchingCore?: boolean
   onExit: () => void
   onToggleFullscreen: () => void
+  onSwitchCore: () => void
 }
 
 /** 播放器顶栏。沉浸模式下随控制栏一起淡出。 */
@@ -27,8 +29,10 @@ export function PlayerTopBar({
   fullscreen,
   fullscreenSupported,
   reduceMotion,
+  switchingCore,
   onExit,
   onToggleFullscreen,
+  onSwitchCore,
 }: Props) {
   const subtitle = displaySubtitle(game)
 
@@ -57,6 +61,16 @@ export function PlayerTopBar({
       <Badge variant="default" size="sm">
         {core}
       </Badge>
+      <IconButton
+        label="切换内核"
+        variant="ghost"
+        size="sm"
+        disabled={switchingCore}
+        onClick={onSwitchCore}
+        className="text-white/80 hover:bg-white/10 hover:text-white"
+      >
+        <IconRefresh size={16} />
+      </IconButton>
 
       {fullscreenSupported ? (
         <IconButton

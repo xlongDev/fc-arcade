@@ -19,7 +19,13 @@ export interface RomHeader {
   isNes2: boolean
 }
 
-/** 校验 iNES 魔数并解出 mapper 号。非法 ROM 直接抛 invalid-rom。 */
+/**
+ * 校验 iNES 魔数并解出 mapper 号。非法 ROM 直接抛 invalid-rom。
+ *
+ * iNES 1.0 的 bytes 8-15 应当是 0；很多老 dump 在这些字节里写了签名（如 DiskDude!）。
+ * jsnes 遇到这种情况会丢弃 byte 7 的高 4 位（只保留 mapper 低 4 位）。
+ * 我们的检测必须与 jsnes 保持一致，否则会把实际能跑的游戏误判成不支持的 mapper。
+ */
 export function parseRomHeader(rom: ArrayBuffer): RomHeader {
   const bytes = new Uint8Array(rom)
   if (bytes.length < 16) {
@@ -36,6 +42,18 @@ export function parseRomHeader(rom: ArrayBuffer): RomHeader {
   if (isNes2) {
     // NES 2.0 把 mapper 高 4 位放在 byte 8 的低半字节
     mapper |= (bytes[8] & 0x0f) << 8
+  } else if (mapper > 0x0f) {
+    // iNES 1.0：如果 bytes 8-15 有任何非 0，jsnes 会忽略 byte 7 高 4 位
+    let hasGarbage = false
+    for (let i = 8; i < 16; i++) {
+      if (bytes[i] !== 0) {
+        hasGarbage = true
+        break
+      }
+    }
+    if (hasGarbage) {
+      mapper = flags6 >> 4
+    }
   }
 
   return {

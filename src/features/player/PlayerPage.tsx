@@ -174,12 +174,14 @@ export function PlayerPage() {
               game={game}
               fps={session.stats.fps}
               showFps={settings.showFps}
-              core={game.preferredCore ?? settings.defaultCore}
+              core={session.activeCore ?? game.preferredCore ?? settings.defaultCore}
               fullscreen={fullscreen.active}
               fullscreenSupported={fullscreen.supported}
               reduceMotion={reduceMotion}
+              switchingCore={session.status === 'loading'}
               onExit={exit}
               onToggleFullscreen={fullscreen.toggle}
+              onSwitchCore={session.switchCore}
             />
           ) : null}
 

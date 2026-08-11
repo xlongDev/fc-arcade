@@ -93,6 +93,18 @@ export class NostalgistAdapter implements EmulatorAdapter {
 
   #canvas: HTMLCanvasElement | null = null
   #rom: ArrayBuffer | null = null
+  #contextLostHandler = ((event: Event) => {
+    event.preventDefault()
+    if (this.#disposed) return
+    // WebGL 上下文丢失会导致画面黑屏但音频可能还在跑，先停下来并上报，
+    // 让上层自动 fallback 到另一个内核
+    this.#stopLoop()
+    this.#setStatus('error')
+    this.#emitter.emit(
+      'error',
+      new EmulatorError('runtime', 'WebGL 上下文丢失，将自动尝试恢复'),
+    )
+  }) as EventListener
 
   #options: Required<Pick<EmulatorOptions, 'volume' | 'audio' | 'integerScale'>> & {
     coreBaseUrl?: string
@@ -143,6 +155,10 @@ export class NostalgistAdapter implements EmulatorAdapter {
     document.addEventListener('visibilitychange', this.#onVisibilityChange)
 
     const changedCanvas = this.#canvas !== null && this.#canvas !== canvas
+    if (changedCanvas) {
+      this.#canvas?.removeEventListener('webglcontextlost', this.#contextLostHandler)
+      canvas.addEventListener('webglcontextlost', this.#contextLostHandler)
+    }
     this.#canvas = canvas
 
     // RetroArch 的 WebGL 上下文绑死在启动时那个 canvas 上，换 canvas 只能整个重启
@@ -242,13 +258,18 @@ export class NostalgistAdapter implements EmulatorAdapter {
   reset(): void {
     const nostalgist = this.#nostalgist
     if (!nostalgist || !this.#started) return
-    this.#releaseAllButtons()
-    nostalgist.restart()
-    this.#resetCounters()
-    // restart() 内部会 resume，状态要跟上，否则 UI 上还显示暂停
-    if (this.#status === 'paused') {
-      this.#setStatus('running')
-      this.#startLoop()
+    try {
+      this.#releaseAllButtons()
+      nostalgist.restart()
+      this.#resetCounters()
+      // restart() 内部会 resume，状态要跟上，否则 UI 上还显示暂停
+      if (this.#status === 'paused') {
+        this.#setStatus('running')
+        this.#startLoop()
+      }
+    } catch (cause) {
+      this.#setStatus('error')
+      this.#emitter.emit('error', this.#toEmulatorError(cause))
     }
   }
 
@@ -256,6 +277,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
     if (this.#disposed) return
     this.#disposed = true
     document.removeEventListener('visibilitychange', this.#onVisibilityChange)
+    this.#canvas?.removeEventListener('webglcontextlost', this.#contextLostHandler)
     this.#teardownInstance()
     this.#canvas = null
     this.#rom = null

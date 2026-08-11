@@ -87,11 +87,14 @@ export class NesRenderer {
 
   /** 把脏帧刷到显示 canvas。force 用于尺寸变化后的重绘。 */
   present(force = false): void {
-    if (!this.#dirty && !force) return
-    if (this.#dirty) {
-      this.#sourceCtx.putImageData(this.#imageData, 0, 0)
-      this.#dirty = false
+    if (force) {
+      // 强制重绘时始终重新上传像素：浏览器在标签页隐藏 / 内存紧张时
+      // 可能丢弃 2D canvas 的 backing store，#dirty 为 false 也会黑屏。
+      this.#dirty = true
     }
+    if (!this.#dirty) return
+    this.#sourceCtx.putImageData(this.#imageData, 0, 0)
+    this.#dirty = false
 
     const target = this.#target
     const ctx = this.#targetCtx
@@ -131,6 +134,9 @@ export class NesRenderer {
 
   /** 按倍数放大原始画面并导出。scale 会被限制在 1~8。 */
   async screenshot(scale: number, type: string, quality?: number): Promise<Blob> {
+    // 先确保 #source 是最新一帧（运行中本来每 tick 都会 present，这里再兜一次底，
+    // 避免极端时序下拿到空白缓冲）。不会影响可见画布。
+    this.present(true)
     // 从 #source 而不是显示 canvas 取图：显示 canvas 带 DPR 缩放和黑边，
     // 而封面图需要的是干净的 256×240 整数倍放大结果
     const factor = clampScreenshotScale(scale)

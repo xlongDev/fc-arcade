@@ -106,6 +106,8 @@ export class JsnesAdapter implements EmulatorAdapter {
   #renderer = new NesRenderer()
   #audio = new NesAudioOutput()
   #nes: NES | null = null
+  /** 载入的 ROM 本体，reset() 时用来干净地重新初始化（而不是依赖 nes.reset()，后者在音频/输入状态错乱时容易卡死） */
+  #rom: ArrayBuffer | null = null
 
   #options: Required<Pick<EmulatorOptions, 'volume' | 'audio' | 'integerScale'>> = {
     volume: 0.7,
@@ -206,6 +208,7 @@ export class JsnesAdapter implements EmulatorAdapter {
       }
 
       this.#nes = nes
+      this.#rom = rom
       this.#appliedMasks = [0, 0]
       this.#setStatus('ready')
     } catch (error) {
@@ -245,12 +248,35 @@ export class JsnesAdapter implements EmulatorAdapter {
 
   reset(): void {
     const nes = this.#nes
-    if (!nes) return
-    nes.reset()
-    this.#audio.reset()
-    this.#renderer.clear()
-    this.#resetCounters()
-    this.#appliedMasks = [0, 0]
+    const rom = this.#rom
+    // 没有 ROM 留存（理论上不该发生）时退化为原生 reset
+    if (!nes || !rom) {
+      nes?.reset()
+      this.#audio.reset()
+      this.#renderer.clear()
+      this.#resetCounters()
+      this.#appliedMasks = [0, 0]
+      return
+    }
+    try {
+      const wasRunning = this.#status === 'running'
+      this.#stopLoop()
+      this.#audio.reset()
+      this.#renderer.clear()
+      this.#resetCounters()
+      const fresh = this.#createNes()
+      fresh.loadROM(toRomBytes(rom))
+      this.#nes = fresh
+      this.#appliedMasks = [0, 0]
+      // 重置前在跑就继续跑；暂停态下保留暂停，等待用户恢复
+      if (wasRunning) this.#startLoop()
+    } catch (cause) {
+      this.#setStatus('error')
+      this.#emitter.emit(
+        'error',
+        new EmulatorError('runtime', '重置失败，请重试（会自动换一个内核再试）', { cause }),
+      )
+    }
   }
 
   dispose(): void {
@@ -404,6 +430,11 @@ export class JsnesAdapter implements EmulatorAdapter {
       }
       this.#updatePlaytime()
     }
+
+    // 兜底重绘：只要还在运行，每 tick 都保证可见画布与最新一帧同步。
+    // 否则在音频反压跳帧、标签页尺寸抖动等情况下，画布可能被清空却没被重绘，
+    // 出现「有声音但黑屏」的脱节现象。
+    if (this.#status === 'running') this.#renderer.present(true)
 
     this.#updateStats(now)
   }

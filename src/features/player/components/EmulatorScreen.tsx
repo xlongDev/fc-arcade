@@ -69,10 +69,12 @@ export function EmulatorScreen({ canvasRef, filter, integerScale, dimmed, onActi
         className="relative shrink-0 transition-[width,height] duration-200"
         style={{ width: size.width, height: size.height }}
       >
+        {/* 注意：不要在这里写 width/height 属性。
+          显示 canvas 的实际像素尺寸由 NesRenderer 根据容器 CSS 尺寸和设备像素比
+          动态维护。React 每次渲染都设置 width/height 会重置 WebGL/2D 绘图缓冲区，
+          导致截图或控制栏显隐时出现一闪而过的黑屏。 */}
         <canvas
           ref={canvasRef}
-          width={NES_WIDTH}
-          height={NES_HEIGHT}
           className="block size-full [image-rendering:pixelated]"
         />
         {filter === 'none' ? null : (
