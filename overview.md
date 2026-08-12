@@ -59,7 +59,7 @@ typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部�
 ## 注意
 - 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
 - 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
-- 已全部推送到 GitHub（origin/main 已更新至 `213f1fc`）。
+- 已全部推送到 GitHub（origin/main 已更新至 `fa87973`）。
 
 ## 2026-08-12 UI/UX 改进：播放器界面改造
 

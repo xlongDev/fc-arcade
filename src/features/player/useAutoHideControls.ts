@@ -26,15 +26,15 @@ export function useAutoHideControls(keepVisible: boolean): {
       return
     }
     ping()
+    // 注意：不要监听 keydown。游戏键盘输入（方向键 / A / B）属于手柄操作，
+    // 不应唤醒控制栏；只有鼠标活动（移动 / 点击）才让栏出现。
     const onActivity = () => ping()
     window.addEventListener('pointermove', onActivity, { passive: true })
     window.addEventListener('pointerdown', onActivity, { passive: true })
-    window.addEventListener('keydown', onActivity)
     return () => {
       window.clearTimeout(timerRef.current)
       window.removeEventListener('pointermove', onActivity)
       window.removeEventListener('pointerdown', onActivity)
-      window.removeEventListener('keydown', onActivity)
     }
   }, [keepVisible, ping])
 

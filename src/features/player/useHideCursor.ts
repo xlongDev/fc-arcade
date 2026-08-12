@@ -31,6 +31,8 @@ export function useHideCursor(enabled: boolean): boolean {
     show()
     scheduleHide()
 
+    // 注意：不要监听 keydown。游戏键盘输入（方向键 / A / B）属于手柄操作，
+    // 不应重新显示光标；只有鼠标活动（移动 / 点击）才让光标出现。
     const onActivity = () => {
       show()
       scheduleHide()
@@ -38,13 +40,11 @@ export function useHideCursor(enabled: boolean): boolean {
 
     window.addEventListener('pointermove', onActivity, { passive: true })
     window.addEventListener('pointerdown', onActivity, { passive: true })
-    window.addEventListener('keydown', onActivity)
 
     return () => {
       window.clearTimeout(timer)
       window.removeEventListener('pointermove', onActivity)
       window.removeEventListener('pointerdown', onActivity)
-      window.removeEventListener('keydown', onActivity)
     }
   }, [enabled])
 
