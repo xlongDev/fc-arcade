@@ -3,6 +3,7 @@
  * detected 是识别管线的产物（会被 reidentify 覆盖），overrides 是用户手改的（永不被覆盖）。
  */
 import type { DetectedMeta, GameRecord, GameView, UserOverrides } from '@/types/game'
+import { normalizeCore } from '@/types/emulator'
 
 /** 允许用户覆盖的字段全集，顺序即 UI 上展示「已编辑」徽标的顺序 */
 export const OVERRIDABLE_KEYS = [
@@ -78,7 +79,8 @@ export function toGameView(record: GameRecord): GameView {
     totalPlayMs: record.totalPlayMs,
     lastPlayedAt: record.lastPlayedAt,
     addedAt: record.addedAt,
-    preferredCore: record.preferredCore,
+    // 老数据可能是 'nostalgist'，归一化到 'fceumm'；null 保持 null
+    preferredCore: normalizeCore(record.preferredCore) ?? null,
     isEdited: editedFields.length > 0,
     editedFields,
   }

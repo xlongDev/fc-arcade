@@ -45,6 +45,7 @@ import type { NesButton, PlayerIndex, TurboConfig } from '@/types/input'
 import { LAYOUT_LABEL, LIBRARY_LAYOUTS, SORT_LABEL } from '@/types/ui'
 import type { LibraryLayout, ScreenFilter } from '@/types/ui'
 import type { GameSortKey } from '@/types/storage'
+import type { EmulatorCore } from '@/types/emulator'
 import { DEFAULT_INPUT_MAPS } from '@/store'
 import {
   BackupError,
@@ -213,13 +214,13 @@ function AudioSection() {
         <Switch checked={muted} onChange={(checked) => setSetting('muted', checked)} />
       </Row>
 
-      <Row label="默认内核" description="jsnes 纯 JS；nostalgist 走 RetroArch WASM（更大）">
+      <Row label="默认内核" description="jsnes 纯 JS；fceumm 走 RetroArch WASM（更大）">
         <Select
           value={defaultCore}
-          onChange={(next) => setSetting('defaultCore', next as 'jsnes' | 'nostalgist')}
+          onChange={(next) => setSetting('defaultCore', next as EmulatorCore)}
           options={[
             { value: 'jsnes', label: 'jsnes（默认）' },
-            { value: 'nostalgist', label: 'nostalgist' },
+            { value: 'fceumm', label: 'fceumm' },
           ]}
         />
       </Row>

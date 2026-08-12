@@ -187,7 +187,7 @@ export class JsnesAdapter implements EmulatorAdapter {
       if (!JSNES_SUPPORTED_MAPPERS.has(header.mapper)) {
         throw new EmulatorError(
           'unsupported-mapper',
-          `该 ROM 使用的 Mapper ${header.mapper} 暂不支持，可尝试切换到 nostalgist 内核`,
+          `该 ROM 使用的 Mapper ${header.mapper} 暂不支持，可尝试切换到 fceumm 内核`,
         )
       }
 
@@ -202,7 +202,7 @@ export class JsnesAdapter implements EmulatorAdapter {
       } catch (cause) {
         throw new EmulatorError(
           'unsupported-mapper',
-          `该 ROM 使用的 Mapper ${header.mapper} 暂不支持，可尝试切换到 nostalgist 内核`,
+          `该 ROM 使用的 Mapper ${header.mapper} 暂不支持，可尝试切换到 fceumm 内核`,
           { cause },
         )
       }
@@ -469,7 +469,7 @@ export class JsnesAdapter implements EmulatorAdapter {
       this.#setStatus('error')
       this.#emitter.emit(
         'error',
-        new EmulatorError('runtime', '模拟器运行出错，请尝试重置或切换到 nostalgist 内核', {
+        new EmulatorError('runtime', '模拟器运行出错，请尝试重置或切换到 fceumm 内核', {
           cause,
         }),
       )

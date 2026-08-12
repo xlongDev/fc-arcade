@@ -20,7 +20,7 @@ pnpm verify:dist    # 必跑：构建产物体检，不通过不要上线
 | 独立 worklet 存在 | dist 内含含 `registerProcessor` 的处理器文件 |
 | 字体存在 | 产物包含 woff2 字体 |
 | 首屏 JS 预算 | 220 KB gzip（超出仅 warning，仍放行） |
-| nostalgist 未进首屏 | 可选内核只走动态 `import()`，不进首屏包 |
+| fceumm 内核未进首屏 | 可选内核只走动态 `import()`，不进首屏包 |
 
 > **务必先 `verify:dist` 再发布**。`audioWorklet.addModule()` 加载 data URI 的失败只在生产构建暴露，本地 dev 永远测不出来。
 
@@ -106,7 +106,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
   - 当前实测：首屏 entry chunk ≈ 117 KB gzip + Motion 共享 chunk ≈ 95 KB gzip，浏览器首屏下载合计 ≈ 212 KB gzip（在预算内）。
   - 播放器、设置、游戏详情、导入向导均已懒加载，不计入首屏。
 - **懒加载边界**：`PlayerPage`、`SettingsPage`（路由级 lazy）、`ImportWizard`（Provider 内按需挂载）、`GameDetailDialog`（按需挂载）。
-- **nostalgist 内核**：仅在用户切到该内核时通过 `await import()` 加载（~16 KB gzip），不进首屏。
+- **fceumm 内核**：仅在用户切到该内核时通过 `await import()` 加载（~16 KB gzip），不进首屏。
 
 如需进一步压首屏：把 `RootLayout` 的入场动画改用纯 CSS（去掉首屏对 Motion 的依赖），可把约 95 KB 的 Motion 共享 chunk 移出首屏关键路径。
 
@@ -122,7 +122,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 - **不提供任何 ROM**：用户必须自己上传合法拥有的备份。
 - **ROM 数据仅存本地（但可备份迁移）**：IndexedDB 跟随浏览器/设备，清站点数据即丢失。已提供「数据备份」功能（设置页「数据」分区）：导出 `.fcab`（本质是 zip）包含六张表 + 设置，恢复支持「合并」与「清空后恢复」两种模式。**换设备请走备份文件，而非依赖浏览器同步。**
-- **nostalgist 内核已本地化**：fceumm 内核（`fceumm_libretro.js` + `fceumm_libretro.wasm`）随仓库放在 `public/cores/`，由 `NostalgistAdapter` 通过 `import.meta.env.BASE_URL + 'cores'` 加载，**离线可用**，不再依赖 CDN。两个内核（jsnes / nostalgist）均完全离线。如需更新内核版本，从 nostalgist 的 `retroarch-emscripten-build@v1.22.2` 重新下载同名文件覆盖即可。
+- **fceumm 内核已本地化**：fceumm 内核（`fceumm_libretro.js` + `fceumm_libretro.wasm`，由 nostalgist 封装）随仓库放在 `public/cores/`，由 `NostalgistAdapter` 通过 `import.meta.env.BASE_URL + 'cores'` 加载，**离线可用**，不再依赖 CDN。两个内核（jsnes / fceumm）均完全离线。如需更新内核版本，从 nostalgist 的 `retroarch-emscripten-build@v1.22.2` 重新下载同名文件覆盖即可。
 - **自学习库是 per-浏览器**：`crcLearn` 已随备份文件导出/导入，但日常不会跨设备自动同步。
 
 ---

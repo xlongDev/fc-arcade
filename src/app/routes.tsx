@@ -18,7 +18,7 @@ import { RootLayout } from './RootLayout'
 import { RouteError } from './RouteError'
 
 /**
- * 播放器懒加载：jsnes / nostalgist 内核体积远大于界面代码，
+ * 播放器懒加载：jsnes / fceumm 内核体积远大于界面代码，
  * 不能让只逛游戏库的用户为它买单。
  */
 const PlayerPage = lazy(async () => {

@@ -91,7 +91,7 @@ const PLAYER2_BINDINGS = {
 const STATS_WINDOW_MS = 1000
 
 export class NostalgistAdapter implements EmulatorAdapter {
-  readonly core: EmulatorCore = 'nostalgist'
+  readonly core: EmulatorCore = 'fceumm'
 
   #status: EmulatorStatus = 'idle'
   #emitter = new Emitter<EmulatorEvents>()
@@ -326,7 +326,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
       if (bytes.byteLength === 0) {
         throw new EmulatorError('save-state-failed', '存档内容为空，请等游戏画面出现后再试')
       }
-      return createPayload('nostalgist', bytes)
+      return createPayload('fceumm', bytes)
     } catch (cause) {
       if (cause instanceof EmulatorError) throw cause
       throw new EmulatorError('save-state-failed', '存档失败，请稍后重试', { cause })
@@ -338,7 +338,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
     if (!nostalgist || !this.#started) {
       throw new EmulatorError('load-state-failed', '游戏还没开始运行，无法读档')
     }
-    assertPayload(payload, 'nostalgist')
+    assertPayload(payload, 'fceumm')
 
     try {
       // 复制一份再交出去：payload.data 可能是 IndexedDB 里那份的视图，

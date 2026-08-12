@@ -6,7 +6,25 @@
 import type { Unsubscribe } from './common'
 import type { InputState } from './input'
 
-export type EmulatorCore = 'jsnes' | 'nostalgist'
+export type EmulatorCore = 'jsnes' | 'fceumm'
+
+/**
+ * 旧版本持久化数据里可能残留的内核别名 → 当前内核名。
+ * 改名（nostalgist → fceumm）后，老用户的 localStorage / IndexedDB 里
+ * 还存着旧字符串，读的时候必须归一化回来，否则会静默回退到 jsnes。
+ */
+export const CORE_LEGACY_ALIASES: Readonly<Record<string, EmulatorCore>> = {
+  nostalgist: 'fceumm',
+}
+
+/** 把任意值归一化成当前合法的 EmulatorCore；无法识别返回 null。 */
+export function normalizeCore(value: unknown): EmulatorCore | null {
+  if (value === 'jsnes' || value === 'fceumm') return value
+  if (typeof value === 'string' && value in CORE_LEGACY_ALIASES) {
+    return CORE_LEGACY_ALIASES[value]
+  }
+  return null
+}
 
 export const NES_WIDTH = 256
 export const NES_HEIGHT = 240
@@ -54,7 +72,7 @@ export interface EmulatorOptions {
   audio?: boolean
   /** 整数倍缩放，保持像素锐利 */
   integerScale?: boolean
-  /** nostalgist 专用：核心文件基础路径 */
+  /** fceumm 内核（由 nostalgist 库加载）专用：核心文件基础路径 */
   coreBaseUrl?: string
 }
 
@@ -130,5 +148,5 @@ export interface EmulatorAdapter {
   ): Unsubscribe
 }
 
-/** 内核工厂。nostalgist 走动态 import，不进首屏包。 */
+/** 内核工厂。fceumm 内核走动态 import，不进首屏包。 */
 export type EmulatorFactory = (core: EmulatorCore) => Promise<EmulatorAdapter>

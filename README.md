@@ -10,7 +10,7 @@
 
 ## 特性
 
-- **浏览器端模拟器**：基于 [jsnes](https://github.com/bfirsh/jsnes) 的实机内核，支持音频（AudioWorklet，零延迟采样）、画面整数缩放、扫描线滤镜、FPS 显示。可选 [nostalgist](https://github.com/derekhe/nostalgist)（RetroArch WASM）内核，**fceumm 内核已本地化到 `public/cores/`，两个内核均完全离线可用**。
+- **浏览器端模拟器**：基于 [jsnes](https://github.com/bfirsh/jsnes) 的实机内核，支持音频（AudioWorklet，零延迟采样）、画面整数缩放、扫描线滤镜、FPS 显示。可选 [nostalgist](https://github.com/derekhe/nostalgist) 封装的 **fceumm（RetroArch WASM）内核**，**已本地化到 `public/cores/`，两个内核均完全离线可用**。
 - **ROM 自上传 + 自动识别**：上传 `.nes` / `.fds` / `.unf` 文件或 zip 合集，自动解析 iNES 头、计算 CRC32，按「CRC 精确命中 → 自学习库 → 文件名模糊匹配 → 兜底」四级信号推断游戏身份，并给出置信度。
 - **CRC 自学习闭环**：某次你手动改对了标题，下次同一个 ROM 直接精确命中你改过的名字。
 - **封面三层递进**：用户上传封面 → 运行时自动截图 → 程序化生成的液态玻璃封面兜底（同一游戏永远同一张图，确定性生成）。
@@ -32,7 +32,7 @@
 | 动画  | Motion 13（`motion/react`）                                          |
 | 状态  | Zustand 5（`persist` 走 localStorage）                                |
 | 存储  | Dexie 4（IndexedDB：游戏、ROM 二进制、封面、存档、会话、CRC 自学习库）                    |
-| 模拟器 | jsnes 2.1（默认，懒加载）；nostalgist 0.21（可选内核，懒加载）                        |
+| 模拟器 | jsnes 2.1（默认，懒加载）；fceumm 内核（nostalgist 0.21 封装，可选，懒加载） |
 | 大列表 | `@tanstack/react-virtual`                                          |
 | 压缩  | fflate 0.8（zip 合集解包）                                               |
 | 校验  | oxlint 1.78（`tsc` 仅做类型检查，lint 用 oxlint）                            |
@@ -52,7 +52,7 @@ src/
 ├── data/             # 持久化层（Dexie DAO + 查询/过滤/排序）
 ├── emulator/         # 模拟器抽象层
 │   ├── jsnes/        # jsnes 适配器（帧循环、音频反压时钟、输入下发）
-│   ├── nostalgist/   # nostalgist 适配器（懒加载）
+│   ├── nostalgist/   # fceumm 适配器（nostalgist 封装，懒加载）
 │   ├── audio/        # AudioWorklet 输出
 │   └── shared/       # ROM 解析、存档、canvas 工具
 ├── features/         # 按业务域切分
@@ -169,7 +169,7 @@ pnpm preview
 ## 性能与首屏
 
 - 首屏只加载游戏库所需代码；**播放器、设置页、游戏详情弹窗、导入向导全部懒加载**。
-- 模拟器内核（jsnes/nostalgist）、识别管线、fflate 均不进首屏。
+- 模拟器内核（jsnes/fceumm）、识别管线、fflate 均不进首屏。
 - 首屏 JS 预算 220 KB gzip（`scripts/verify-build.mjs` 守卫）。当前实测首屏 entry chunk ≈ 117 KB gzip，Motion 共享 chunk ≈ 95 KB gzip，浏览器首屏下载合计 ≈ 212 KB gzip，在预算内。
 - `nes-audio-processor` 必须作为独立文件产出（`?url&no-inline` + `assetsInlineLimit` 兜底），否则生产环境 `audioWorklet.addModule()` 加载 data URI 会静默失败——`verify:dist` 会拦截此问题。
 

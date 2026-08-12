@@ -2,7 +2,7 @@
  * 模拟器层对外入口。上层只从这里拿适配器，不直接 import 具体内核。
  *
  * jsnes 是默认内核，静态导入 —— 它是纯 JS，体积小，首屏就要能用。
- * nostalgist 走动态 import：RetroArch 的加载器 + WASM 核心有好几 MB，
+ * fceumm 走动态 import：RetroArch 的加载器 + WASM 核心有好几 MB，
  * 只有用户真的在设置里切过去时才应该被下载。
  */
 import type { EmulatorAdapter, EmulatorCore } from '@/types/emulator'
@@ -19,7 +19,7 @@ export async function createEmulator(core: EmulatorCore): Promise<EmulatorAdapte
     return new JsnesAdapter()
   }
 
-  if (core === 'nostalgist') {
+  if (core === 'fceumm') {
     try {
       const { NostalgistAdapter } = await import('./nostalgist/NostalgistAdapter')
       return new NostalgistAdapter()
