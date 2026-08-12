@@ -396,6 +396,9 @@ export class NostalgistAdapter implements EmulatorAdapter {
         savestate_thumbnail_enable: false,
         video_smooth: false,
         video_scale_integer: this.#options.integerScale,
+        // WebGL GPU 截图在某些环境下会读到已清空的缓冲而黑屏，
+        // 强制从 RetroArch 内部帧缓冲截图，避免封面/截图全黑。
+        video_gpu_screenshot: false,
         // 左右过扫描区（NES 两侧各 8px）的裁剪不放这里：
         // RetroArch 的 video_crop_overscan 经 nostalgist 传入后不生效。
         // 改为在 EmulatorScreen（CSS overflow 裁显示）和 screenshot（rescaleBlob 裁 Blob）层处理。
