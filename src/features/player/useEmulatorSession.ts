@@ -22,7 +22,7 @@ const MAX_RUNTIME_RETRIES = 3
 
 /** 两个内核二选一 */
 function alternateCore(core: EmulatorCore): EmulatorCore {
-  return core === 'jsnes' ? 'fceumm' : 'jsnes'
+  return core === 'jsnes' ? 'nostalgist' : 'jsnes'
 }
 
 function toEmulatorError(cause: unknown): EmulatorError {

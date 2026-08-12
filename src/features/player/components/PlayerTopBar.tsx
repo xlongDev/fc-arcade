@@ -4,13 +4,15 @@ import { Badge, IconButton } from '@/components/ui'
 import { IconArrowLeft, IconFullscreen, IconFullscreenExit, IconRefresh } from '@/components/icons'
 import { SPRING } from '@/features/common/motion'
 import type { GameView } from '@/types/game'
+import type { EmulatorCore } from '@/types/emulator'
+import { CORE_DISPLAY_NAME } from '@/types/emulator'
 import { displaySubtitle, displayTitle } from '@/features/common/lib/gameDisplay'
 
 interface Props {
   game: GameView
   fps: number
   showFps: boolean
-  core: string
+  core: EmulatorCore
   fullscreen: boolean
   fullscreenSupported: boolean
   reduceMotion: boolean
@@ -59,7 +61,7 @@ export function PlayerTopBar({
         </Badge>
       ) : null}
       <Badge variant="default" size="sm">
-        {core}
+        {CORE_DISPLAY_NAME[core]}
       </Badge>
       <IconButton
         label="切换内核"

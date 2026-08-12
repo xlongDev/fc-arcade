@@ -7,6 +7,7 @@ import { BlobImage } from '@/features/common/components/BlobImage'
 import { notifyStorageChanged } from '@/features/common/lib/storageEvents'
 import { formatBytes, formatRelativeTime } from '@/lib/format'
 import type { SaveStateRow } from '@/types/storage'
+import { CORE_DISPLAY_NAME } from '@/types/emulator'
 
 function slotLabel(row: SaveStateRow): string {
   if (row.slot === 'auto') return '自动存档'
@@ -111,7 +112,7 @@ export function SaveStatePanel({ gameId }: Props) {
                 {row.label ?? slotLabel(row)}
               </p>
               <p className="mt-0.5 text-xs text-[var(--color-text-faint)]">
-                {formatRelativeTime(row.createdAt)} · {formatBytes(row.blob.size)} · {row.core}
+                {formatRelativeTime(row.createdAt)} · {formatBytes(row.blob.size)} · {CORE_DISPLAY_NAME[row.core]}
               </p>
             </div>
             <Button

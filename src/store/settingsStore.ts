@@ -21,7 +21,6 @@ import {
   SETTINGS_STORAGE_KEY,
 } from '@/config/defaults'
 import type { EmulatorCore } from '@/types/emulator'
-import { normalizeCore } from '@/types/emulator'
 import type {
   GamepadMap,
   KeyboardMap,
@@ -63,7 +62,7 @@ const SORT_KEYS: readonly GameSortKey[] = [
   'totalPlayMs',
 ]
 const SCREEN_FILTERS: readonly ScreenFilter[] = ['none', 'scanline', 'crt', 'lcd']
-const CORES: readonly EmulatorCore[] = ['jsnes', 'fceumm']
+const CORES: readonly EmulatorCore[] = ['jsnes', 'nostalgist']
 const MODES: readonly ColorModeSetting[] = ['light', 'dark', 'system']
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -188,12 +187,7 @@ export function mergeSettings(persisted: unknown, base: AppSettings = DEFAULT_SE
     volume: num(persisted.volume, base.volume, 0, 1),
     muted: bool(persisted.muted, base.muted),
 
-    // 老用户可能残留 'nostalgist'，先归一化到 'fceumm' 再校验
-    defaultCore: oneOf<EmulatorCore>(
-      normalizeCore(persisted.defaultCore) ?? base.defaultCore,
-      CORES,
-      base.defaultCore,
-    ),
+    defaultCore: oneOf<EmulatorCore>(persisted.defaultCore, CORES, base.defaultCore),
     screenFilter: oneOf<ScreenFilter>(persisted.screenFilter, SCREEN_FILTERS, base.screenFilter),
     integerScale: bool(persisted.integerScale, base.integerScale),
     showFps: bool(persisted.showFps, base.showFps),
