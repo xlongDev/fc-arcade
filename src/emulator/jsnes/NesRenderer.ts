@@ -17,7 +17,7 @@ const MAX_DPR = 3
 
 export class NesRenderer {
   readonly #source: HTMLCanvasElement
-  readonly #sourceCtx: CanvasRenderingContext2D
+  #sourceCtx: CanvasRenderingContext2D
   readonly #imageData: ImageData
   readonly #pixels: Uint32Array
 
@@ -93,12 +93,26 @@ export class NesRenderer {
       this.#dirty = true
     }
     if (!this.#dirty) return
+
+    // 2D context 在内存紧张或标签页后台返回后可能被浏览器回收，
+    // 直接 putImageData/drawImage 会变成 no-op 导致黑屏。这里做一次兜底恢复。
+    if (isContextLost(this.#sourceCtx)) {
+      const ctx = this.#source.getContext('2d', { alpha: false, willReadFrequently: false })
+      if (ctx) this.#sourceCtx = ctx
+    }
     this.#sourceCtx.putImageData(this.#imageData, 0, 0)
     this.#dirty = false
 
     const target = this.#target
-    const ctx = this.#targetCtx
+    let ctx = this.#targetCtx
     if (!target || !ctx) return
+    if (isContextLost(ctx)) {
+      const restored = target.getContext('2d', { alpha: false })
+      if (!restored) return
+      restored.imageSmoothingEnabled = false
+      this.#targetCtx = restored
+      ctx = restored
+    }
 
     const cw = target.width
     const ch = target.height
@@ -179,4 +193,9 @@ export class NesRenderer {
     if (target.height !== height) target.height = height
     if (this.#targetCtx) this.#targetCtx.imageSmoothingEnabled = false
   }
+}
+
+/** 检测 2D canvas 上下文是否已被浏览器回收；兼容不支持 isContextLost 的浏览器。 */
+function isContextLost(ctx: CanvasRenderingContext2D): boolean {
+  return typeof ctx.isContextLost === 'function' && ctx.isContextLost()
 }

@@ -12,7 +12,8 @@
  * 2. 采样率以 AudioContext 实际值为准再喂给 jsnes。如果内核按 44100 产样本
  *    而设备跑 48000，缓冲会持续欠载，反压逻辑会误判成「跑得不够快」而狂追帧。
  *
- * 3. 一次 tick 内可能跑多帧，但只在最后 present 一次，避免无谓的 drawImage。
+ * 3. 每 rAF tick 最多推进一帧并 present 一次。jsnes 的 onFrame 在同步连跑多帧时
+ *    容易触发 PPU 精灵/背景渲染异常，因此把追帧拆到多个 tick 完成。
  */
 import type { ButtonKey, ControllerId, EmulatorData } from 'jsnes'
 import { Controller, NES } from 'jsnes'
@@ -42,8 +43,6 @@ import {
   encodeJson,
 } from '@/emulator/shared/saveState'
 
-/** 缓冲低水位（帧）：低于这个值说明内核跑慢了，需要补帧 */
-const LOW_WATER_FRAMES = 3
 /**
  * 缓冲高水位（帧）：高于这个值跳过本次执行。
  * 取 6 而不是 8 —— 高水位直接等于音频延迟上限，6 帧 ≈ 100ms 已是可接受上限。
@@ -417,6 +416,14 @@ export class JsnesAdapter implements EmulatorAdapter {
       }
     }
 
+    // jsnes 的 onFrame 回调在同步连跑多帧时容易触发 PPU 时序/精灵渲染异常
+    //（截图中的 sprite 乱码、撕裂）。参考 jsnes 官方 browser 实现，每 rAF tick
+    // 最多推进并显示一帧，追帧交给后续 tick 自然完成，而不是一次 burst 跑完。
+    if (framesToRun > 1) {
+      this.#skippedFrames += framesToRun - 1
+      framesToRun = 1
+    }
+
     for (let i = 0; i < framesToRun; i++) {
       if (!this.#runFrame(nes)) return
     }
@@ -431,15 +438,17 @@ export class JsnesAdapter implements EmulatorAdapter {
       this.#updatePlaytime()
     }
 
-    // 兜底重绘：只要还在运行，每 tick 都保证可见画布与最新一帧同步。
-    // 否则在音频反压跳帧、标签页尺寸抖动等情况下，画布可能被清空却没被重绘，
-    // 出现「有声音但黑屏」的脱节现象。
-    if (this.#status === 'running') this.#renderer.present(true)
+    // 兜底重绘：这次 tick 没有跑帧时（音频反压跳过），仍把最后一帧重新刷到
+    // 画布。浏览器在标签页隐藏、内存紧张或 canvas backing store 被回收后，
+    // 可能出现「有声音但黑屏」，强制 present 一次可恢复。
+    if (framesToRun === 0 && this.#status === 'running') {
+      this.#renderer.present(true)
+    }
 
     this.#updateStats(now)
   }
 
-  /** 按音频缓冲水位决定这次 tick 要跑几帧 */
+  /** 按音频缓冲水位决定这次 tick 是否要跑一帧。返回值已约束为 0 或 1。 */
   #framesByAudioPressure(): number {
     const samplesPerFrame = this.#audio.sampleRate / NES_FPS
     const buffered = this.#audio.buffered
@@ -448,13 +457,8 @@ export class JsnesAdapter implements EmulatorAdapter {
       this.#skippedFrames++
       return 0
     }
-    if (buffered < samplesPerFrame * LOW_WATER_FRAMES) {
-      // 缺多少补多少，但不超过上限
-      const deficit = Math.ceil(
-        (samplesPerFrame * LOW_WATER_FRAMES - buffered) / samplesPerFrame,
-      )
-      return Math.min(MAX_FRAMES_PER_TICK, 1 + deficit)
-    }
+    // 低水位时也不burst多帧，而是保持每 tick 一帧让音频自然追上。
+    // 同步连跑多帧会导致 PPU 精灵/背景渲染异常（参考 issue：画面乱码、撕裂）。
     return 1
   }
 
