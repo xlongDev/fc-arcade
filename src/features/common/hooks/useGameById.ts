@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { gameDao, toGameView } from '@/data'
 import type { GameView } from '@/types/game'
@@ -21,6 +21,8 @@ export function useGameById(gameId: string | null): {
   const [missing, setMissing] = useState(false)
   const [version, setVersion] = useState(0)
 
+  const loadedGameIdRef = useRef<string | null>(null)
+
   const refresh = useCallback(() => setVersion((v) => v + 1), [])
 
   useEffect(() => {
@@ -28,10 +30,16 @@ export function useGameById(gameId: string | null): {
       setGame(null)
       setLoading(false)
       setMissing(true)
+      loadedGameIdRef.current = null
       return
     }
     let alive = true
-    setLoading(true)
+    // 仅首次加载 / 切换游戏时显示加载态。刷新（version 变化，例如 notifyLibraryChanged
+    // 触发的重新拉取）时保持当前画面——否则 loading 闪烁会把整个播放器卸载成 Spinner
+    // 再重挂，导致 canvas 节点被替换、模拟器误重启（见 useEmulatorSession 的 setCanvasRef）。
+    const firstLoad = loadedGameIdRef.current !== gameId
+    if (firstLoad) setLoading(true)
+    loadedGameIdRef.current = gameId
     void gameDao
       .get(gameId)
       .then((record) => {
@@ -44,7 +52,7 @@ export function useGameById(gameId: string | null): {
         if (alive) setMissing(true)
       })
       .finally(() => {
-        if (alive) setLoading(false)
+        if (alive && firstLoad) setLoading(false)
       })
     return () => {
       alive = false

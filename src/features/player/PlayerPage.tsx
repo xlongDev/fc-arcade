@@ -9,7 +9,7 @@ import { coverDao, gameDao } from '@/data'
 import { useGameById } from '@/features/common/hooks/useGameById'
 import { useIsCompactViewport, useIsTouchDevice } from '@/features/common/hooks/useMediaQuery'
 import { useReduceMotion } from '@/features/common/hooks/useReduceMotion'
-import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/lib/storageEvents'
+import { notifyStorageChanged } from '@/features/common/lib/storageEvents'
 import { TouchGamepad } from '@/input'
 import { useSettingsStore } from '@/store'
 import type { EmulatorAdapter } from '@/types/emulator'
@@ -82,7 +82,8 @@ export function PlayerPage() {
         updatedAt: Date.now(),
       })
       await gameDao.update(game.id, { coverKind: 'screenshot' })
-      notifyLibraryChanged()
+      // 播放器内不挂载游戏库，无需广播 libraryChanged 让 useGameById 重拉（否则 loading 闪烁会
+      // 把播放器卸载成 Spinner 再重挂，导致 canvas 节点替换、模拟器重启）。退出后会由库自身刷新。
       notifyStorageChanged()
       toast({ variant: 'success', title: '截图已设为封面' })
     } catch (cause) {

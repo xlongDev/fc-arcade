@@ -54,7 +54,8 @@ export function usePlaytimeTracker({ game, adapterRef }: Options): (seconds: num
         updatedAt: Date.now(),
       })
       await gameDao.update(current.id, { coverKind: 'screenshot' })
-      notifyLibraryChanged()
+      // 播放器内不挂载游戏库，无需广播 libraryChanged（否则 useGameById 重拉会触发 loading 闪烁、
+      // 把播放器卸载重挂导致模拟器重启）。退出后由库自身刷新。
       notifyStorageChanged()
     } catch (cause) {
       console.warn('[fc-arcade] 自动截图封面失败', cause)
