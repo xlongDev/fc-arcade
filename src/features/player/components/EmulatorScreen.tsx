@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import type { RefObject } from 'react'
+import type { Ref } from 'react'
 
 import { cn } from '@/lib/cn'
 import { NES_HEIGHT, NES_WIDTH } from '@/types/emulator'
@@ -31,7 +31,7 @@ function fitSize(box: Size, integerScale: boolean): Size {
 }
 
 interface Props {
-  canvasRef: RefObject<HTMLCanvasElement | null>
+  canvasRef: Ref<HTMLCanvasElement | null>
   filter: ScreenFilter
   integerScale: boolean
   /** 暂停时给画面加一层压暗，提示状态 */

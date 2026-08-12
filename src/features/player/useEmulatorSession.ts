@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { RefObject } from 'react'
+import type { Ref, RefObject } from 'react'
 
 import { gameDao, romDao } from '@/data'
 import { createEmulator } from '@/emulator'
@@ -32,7 +32,7 @@ function toEmulatorError(cause: unknown): EmulatorError {
 }
 
 export interface EmulatorSession {
-  canvasRef: RefObject<HTMLCanvasElement | null>
+  canvasRef: Ref<HTMLCanvasElement | null>
   adapterRef: RefObject<EmulatorAdapter | null>
   /** 实际成功跑起来的内核（可能与设置里的默认核不同，因为做了自动回退） */
   activeCore: EmulatorCore | null
@@ -76,6 +76,7 @@ export function useEmulatorSession({
   onPlaytime,
 }: Options): EmulatorSession {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const lastCanvasRef = useRef<HTMLCanvasElement | null>(null)
 
   const defaultCore = useSettingsStore((s) => s.settings.defaultCore)
   const volume = useSettingsStore((s) => s.settings.volume)
@@ -305,8 +306,27 @@ export function useEmulatorSession({
     }
   }, [adapterRef])
 
+  // canvas 元素被 React 重建（例如截图后 UI 重渲染导致 EmulatorScreen remount）时，
+  // 需要重新初始化适配器，否则适配器仍往旧的、已被移出 DOM 的 canvas 上画，用户看到黑屏。
+  // 用 callback ref：canvas 节点替换时精确触发一次，避免普通 effect 无依赖导致的渲染死循环 lint 告警。
+  const setCanvasRef = useCallback(
+    (node: HTMLCanvasElement | null) => {
+      canvasRef.current = node
+      if (node === lastCanvasRef.current) return
+      lastCanvasRef.current = node
+      const adapter = adapterRef.current
+      if (adapter) {
+        adapter.dispose()
+        adapterRef.current = null
+      }
+      // 只在真正挂上“新”节点时重建会话；卸载（node 为 null）只清引用不触发重载
+      if (node) setAttempt((n) => n + 1)
+    },
+    [adapterRef],
+  )
+
   return {
-    canvasRef,
+    canvasRef: setCanvasRef,
     adapterRef,
     activeCore,
     status,

@@ -14,6 +14,12 @@ import { FavoriteButton } from './FavoriteButton'
 import { GameCover } from './GameCover'
 import { SelectMark } from './SelectMark'
 
+/** 阻止事件冒泡后再执行回调（纯函数，不依赖组件作用域） */
+function stopPropagation(event: MouseEvent, run: () => void): void {
+  event.stopPropagation()
+  run()
+}
+
 /** 列表布局的单行 */
 export function GameRow({ game, actions, animate, selected, selectionMode }: GameItemProps) {
   const title = displayTitle(game)
@@ -22,11 +28,6 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
   const handleActivate = () => {
     if (selectionMode) actions.onToggleSelect(game)
     else actions.onPlay(game)
-  }
-
-  const stop = (event: MouseEvent, run: () => void) => {
-    event.stopPropagation()
-    run()
   }
 
   return (
@@ -96,7 +97,7 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
           label="开始游戏"
           size="sm"
           variant="solid"
-          onClick={(event: MouseEvent) => stop(event, () => actions.onPlay(game))}
+          onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onPlay(game))}
         >
           <IconPlay size={14} />
         </IconButton>
@@ -104,7 +105,7 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
           label="编辑游戏信息"
           size="sm"
           variant="ghost"
-          onClick={(event: MouseEvent) => stop(event, () => actions.onDetail(game))}
+          onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onDetail(game))}
         >
           <IconEdit size={14} />
         </IconButton>
@@ -112,7 +113,7 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
           label="删除游戏"
           size="sm"
           variant="ghost"
-          onClick={(event: MouseEvent) => stop(event, () => actions.onDelete(game))}
+          onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onDelete(game))}
         >
           <IconTrash size={14} />
         </IconButton>
