@@ -389,6 +389,9 @@ export class NostalgistAdapter implements EmulatorAdapter {
         savestate_thumbnail_enable: false,
         video_smooth: false,
         video_scale_integer: this.#options.integerScale,
+        // NES 左右/上下 8px 左右是过扫描区，很多游戏会把背景色（如本截图里的红色）
+        // 泄到这里；fceumm 默认输出完整画面，开启 crop 可让显示区域与 jsnes 时代一致
+        video_crop_overscan: true,
         // RetroArch 自带的 OSD 提示、帧率显示和快捷菜单在嵌入场景里只会干扰
         video_font_enable: false,
         fps_show: false,
