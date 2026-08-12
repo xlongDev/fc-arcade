@@ -68,7 +68,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   volume: 0.7,
   muted: false,
 
-  defaultCore: 'jsnes',
+  defaultCore: 'nostalgist',
   screenFilter: 'scanline',
   integerScale: false,
   showFps: false,

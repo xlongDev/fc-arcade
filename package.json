@@ -21,7 +21,6 @@
     "dexie": "^4.4.4",
     "dexie-react-hooks": "^4.4.0",
     "fflate": "^0.8.3",
-    "jsnes": "^2.1.0",
     "motion": "^13.0.0",
     "nostalgist": "^0.21.1",
     "react": "^19.2.8",

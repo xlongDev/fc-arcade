@@ -214,14 +214,11 @@ function AudioSection() {
         <Switch checked={muted} onChange={(checked) => setSetting('muted', checked)} />
       </Row>
 
-      <Row label="默认内核" description="jsnes 纯 JS；fceumm 走 RetroArch / nostalgist WASM（更大）">
+      <Row label="默认内核" description="fceumm（RetroArch / nostalgist WASM，已本地化离线可用）">
         <Select
           value={defaultCore}
           onChange={(next) => setSetting('defaultCore', next as EmulatorCore)}
-          options={[
-            { value: 'jsnes', label: 'jsnes（默认）' },
-            { value: 'nostalgist', label: 'fceumm' },
-          ]}
+          options={[{ value: 'nostalgist', label: 'fceumm' }]}
         />
       </Row>
     </Section>

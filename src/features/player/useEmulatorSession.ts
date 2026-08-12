@@ -17,13 +17,8 @@ import type { InputManager } from '@/types/input'
 
 const EMPTY_STATS: EmulatorStats = { fps: 0, audioBuffered: 0, skippedFrames: 0, frameCostMs: 0 }
 
-/** 运行期崩溃后的最大自动重试次数（含启动失败），避免两个核互相 ping-pong 死循环 */
+/** 运行期崩溃后的最大自动重试次数（含启动失败），避免崩溃后无限重试死循环 */
 const MAX_RUNTIME_RETRIES = 3
-
-/** 两个内核二选一 */
-function alternateCore(core: EmulatorCore): EmulatorCore {
-  return core === 'jsnes' ? 'nostalgist' : 'jsnes'
-}
 
 function toEmulatorError(cause: unknown): EmulatorError {
   if (cause instanceof EmulatorError) return cause
@@ -91,8 +86,6 @@ export function useEmulatorSession({
   const activeCoreRef = useRef<EmulatorCore | null>(null)
   activeCoreRef.current = activeCore
   const [attempt, setAttempt] = useState(0)
-  /** 用户手动指定的内核，优先级高于游戏记录和全局默认 */
-  const [coreOverride, setCoreOverride] = useState<EmulatorCore | null>(null)
 
   const playtimeRef = useRef(onPlaytime)
   playtimeRef.current = onPlaytime
@@ -107,10 +100,10 @@ export function useEmulatorSession({
 
   const gameId = game?.id ?? null
   const romId = game?.romId ?? null
-  // 优先级：手动切换 > 游戏记录 > 全局默认
-  const effectiveCore = coreOverride ?? game?.preferredCore ?? defaultCore
+  // 当前单内核（仅 fceumm），effectiveCore 直接取游戏记录或全局默认
+  const effectiveCore = game?.preferredCore ?? defaultCore
 
-  /** 本次启动优先尝试的内核；重试/切换时由外部翻转到另一个核 */
+  /** 本次启动优先尝试的内核 */
   const bootPreferredRef = useRef<EmulatorCore>(effectiveCore)
 
   useEffect(() => {
@@ -140,8 +133,8 @@ export function useEmulatorSession({
     }
 
     const boot = async () => {
-      // 优先尝试 preferred，失败再试另一个核。任一个能跑就成功。
-      const candidates: EmulatorCore[] = [preferred, alternateCore(preferred)]
+      // 当前只有 fceumm（nostalgist 加载）一个内核，直接尝试它。
+      const candidates: EmulatorCore[] = [preferred]
       let lastError: unknown = null
 
       for (const candidate of candidates) {
@@ -166,11 +159,11 @@ export function useEmulatorSession({
                 setAudioBlocked(true)
                 return
               }
-              // 运行期崩溃（WebGL 丢失、内核异常等）自动换核重试，
+              // 运行期崩溃（WebGL 丢失、内核异常等）自动重试，
               // 不直接把错误弹给用户；超过上限才停下来。
               if (next.code !== 'invalid-rom' && attempt < MAX_RUNTIME_RETRIES) {
                 const crashedCore = activeCoreRef.current ?? bootPreferredRef.current
-                bootPreferredRef.current = alternateCore(crashedCore)
+                bootPreferredRef.current = crashedCore
                 window.setTimeout(() => setAttempt((n) => n + 1), 50)
                 return
               }
@@ -282,18 +275,14 @@ export function useEmulatorSession({
   }, [adapterRef])
 
   const retry = useCallback(() => {
-    // 重试时翻转到另一个内核，避免卡在同一个跑不起来的核上
-    bootPreferredRef.current = alternateCore(bootPreferredRef.current)
+    // 当前只有一个内核，重试即重建当前会话
     setAttempt((n) => n + 1)
   }, [])
 
   const switchCore = useCallback(() => {
-    const current = activeCoreRef.current ?? effectiveCore
-    const next = alternateCore(current)
-    setCoreOverride(next)
-    bootPreferredRef.current = next
+    // 当前只有一个内核，切换即重建当前会话（保持 PlayerTopBar 的切换按钮可用）
     setAttempt((n) => n + 1)
-  }, [effectiveCore])
+  }, [])
 
   const unlockAudio = useCallback(async () => {
     const adapter = adapterRef.current

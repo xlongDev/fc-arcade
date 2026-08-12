@@ -61,31 +61,19 @@ if (!existsSync(join(DIST, 'index.html'))) {
 
 // ------------------------------------------- 检查 1：AudioWorklet 未被内联
 //
-// Vite 默认会把小于 assetsInlineLimit(4096B) 的资源转成 data: URI。
-// AudioWorklet 的 addModule() 加载 data URI 在部分浏览器会抛
-// AbortError: Unable to load a worklet's module（vitejs/vite#6979）。
-// dev 模式走真实 URL，所以这个问题只在生产构建里存在。
-
-const inlinedScript = jsFiles.filter((f) =>
-  readFileSync(f, 'utf8').includes('data:text/javascript;base64'),
-)
-
-if (inlinedScript.length > 0) {
-  fail(
-    'AudioWorklet 被内联成了 data: URI',
-    `以下产物内含 base64 脚本，线上音频会加载失败：\n` +
-      inlinedScript.map((f) => `      ${relative(ROOT, f)}`).join('\n') +
-      `\n    修法：worklet 导入处加 ?url&no-inline 后缀。`,
-  )
-}
+// 历史：项目曾用自研 AudioWorklet（nes-audio-processor）做 NES 采样输出，
+// 当时必须保证它作为独立文件产出、不能被 Vite 内联成 data: URI
+// （audioWorklet.addModule() 加载 data URI 在部分浏览器会抛
+// AbortError: Unable to load a worklet's module，vitejs/vite#6979）。
+//
+// 现状：移除 jsnes 内核后，唯一的实机内核是 fceumm（nostalgist / RetroArch），
+// 音频由 RetroArch 自己的 AudioContext 原生处理，项目不再拥有自定义 AudioWorklet，
+// 故该检查已无对象。保留空检查位以标记此处历史约束，避免日后误加 worklet
+// 时忘记守卫（届时需在 vite.config 的 assetsInlineLimit 里为新 worklet
+// 放行，并恢复本检查）。
 
 const workletAsset = files.find((f) => /audio-processor.*\.js$/.test(f))
-if (!workletAsset) {
-  fail(
-    '找不到独立的 AudioWorklet 产物',
-    'dist/ 下应存在 audio-processor-*.js。它必须是独立文件，不能被打进主包。',
-  )
-} else {
+if (workletAsset) {
   const src = readFileSync(workletAsset, 'utf8')
   if (!src.includes('registerProcessor')) {
     fail(

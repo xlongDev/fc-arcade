@@ -1,7 +1,7 @@
 /**
  * 模拟器适配层契约。
- * jsnes（纯 JS，默认）与 nostalgist（libretro WASM 加载器，可选）都实现 EmulatorAdapter，
- * 上层 UI 只依赖这个接口，不感知内核差异。
+ * fceumm（通过 nostalgist 这个 libretro / RetroArch WASM 加载器加载，核心文件本地化在
+ * public/cores/）实现 EmulatorAdapter，上层 UI 只依赖这个接口，不感知内核差异。
  *
  * 术语区分（两者不是一回事）：
  * - `EmulatorCore` 里的 'nostalgist' 指的是 nostalgist 这个**加载器库**
@@ -13,11 +13,10 @@
 import type { Unsubscribe } from './common'
 import type { InputState } from './input'
 
-export type EmulatorCore = 'jsnes' | 'nostalgist'
+export type EmulatorCore = 'nostalgist'
 
 /** 用户可见的内核显示名：nostalgist 加载器跑的是 fceumm 核心。 */
 export const CORE_DISPLAY_NAME: Record<EmulatorCore, string> = {
-  jsnes: 'jsnes',
   nostalgist: 'fceumm',
 }
 
@@ -29,11 +28,10 @@ export const NES_FPS = 60.0988
  * 向 AudioContext 请求的首选采样率。
  *
  * 注意这只是「首选值」，不是可以到处硬编码的真值：
- * - jsnes 的 NESOptions.sampleRate 默认是 48000，不是 44100；
  * - 浏览器可以忽略 AudioContext 的 sampleRate 请求，回落到设备原生速率
  *   （常见 48000，部分蓝牙设备 16000）。
  *
- * 因此内核实例化时必须把 **实际的 AudioContext.sampleRate** 传给 jsnes，
+ * 因此内核实例化时必须以 **实际的 AudioContext.sampleRate** 为准，
  * 否则音高和播放速度都会偏。
  */
 export const AUDIO_SAMPLE_RATE = 44100

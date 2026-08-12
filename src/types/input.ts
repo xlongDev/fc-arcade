@@ -18,7 +18,7 @@ export const NES_BUTTONS: readonly NesButton[] = [
   'right',
 ] as const
 
-/** 位标志。顺序与 jsnes 的 BUTTON_* 常量保持一致，适配层负责映射。 */
+/** 位标志。顺序遵循 NES 标准按键顺序，适配层负责映射成内核的具体按键。 */
 export const BUTTON_BIT: Readonly<Record<NesButton, number>> = {
   a: 1 << 0,
   b: 1 << 1,

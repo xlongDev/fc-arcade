@@ -62,7 +62,7 @@ const SORT_KEYS: readonly GameSortKey[] = [
   'totalPlayMs',
 ]
 const SCREEN_FILTERS: readonly ScreenFilter[] = ['none', 'scanline', 'crt', 'lcd']
-const CORES: readonly EmulatorCore[] = ['jsnes', 'nostalgist']
+const CORES: readonly EmulatorCore[] = ['nostalgist']
 const MODES: readonly ColorModeSetting[] = ['light', 'dark', 'system']
 
 function isRecord(value: unknown): value is Record<string, unknown> {

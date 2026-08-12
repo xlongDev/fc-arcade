@@ -10,7 +10,6 @@ export const SAVE_STATE_VERSION = 1
 
 // 存档报错时给用户看的内核名：nostalgist 加载器跑的是 fceumm 核心，所以显示 fceumm
 const CORE_LABEL: Record<EmulatorCore, string> = {
-  jsnes: 'jsnes',
   nostalgist: 'fceumm',
 }
 

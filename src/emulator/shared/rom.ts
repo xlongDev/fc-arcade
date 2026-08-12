@@ -5,11 +5,6 @@
  */
 import { EmulatorError } from '@/types/emulator'
 
-/** jsnes 2.1.0 内置的 mapper 列表（node_modules/jsnes/src/mappers/index.js） */
-export const JSNES_SUPPORTED_MAPPERS: ReadonlySet<number> = new Set([
-  0, 1, 2, 3, 4, 5, 7, 9, 11, 34, 38, 66, 71, 79, 94, 118, 119, 140, 180, 240, 241,
-])
-
 export interface RomHeader {
   mapper: number
   prgBanks: number
@@ -22,9 +17,8 @@ export interface RomHeader {
 /**
  * 校验 iNES 魔数并解出 mapper 号。非法 ROM 直接抛 invalid-rom。
  *
- * iNES 1.0 的 bytes 8-15 应当是 0；很多老 dump 在这些字节里写了签名（如 DiskDude!）。
- * jsnes 遇到这种情况会丢弃 byte 7 的高 4 位（只保留 mapper 低 4 位）。
- * 我们的检测必须与 jsnes 保持一致，否则会把实际能跑的游戏误判成不支持的 mapper。
+ * iNES 1.0 的 bytes 8-15 应当是 0；很多老 dump 在这些字节里写了签名（如 DiskDude!），
+ * 会污染 byte 7 的高 4 位。这里按标准约定丢弃高 4 位，避免把实际能跑的游戏误判成不支持的 mapper。
  */
 export function parseRomHeader(rom: ArrayBuffer): RomHeader {
   const bytes = new Uint8Array(rom)
@@ -43,7 +37,7 @@ export function parseRomHeader(rom: ArrayBuffer): RomHeader {
     // NES 2.0 把 mapper 高 4 位放在 byte 8 的低半字节
     mapper |= (bytes[8] & 0x0f) << 8
   } else if (mapper > 0x0f) {
-    // iNES 1.0：如果 bytes 8-15 有任何非 0，jsnes 会忽略 byte 7 高 4 位
+    // iNES 1.0 兼容启发式：若 bytes 8-15 有任何非 0，说明是旧格式，byte 7 高 4 位（mapper 高位）应被忽略
     let hasGarbage = false
     for (let i = 8; i < 16; i++) {
       if (bytes[i] !== 0) {
@@ -64,13 +58,4 @@ export function parseRomHeader(rom: ArrayBuffer): RomHeader {
     hasBattery: (flags6 & 0x02) !== 0,
     isNes2,
   }
-}
-
-/**
- * jsnes 2.1.0 的 ROM.load 已原生接受 Uint8Array / ArrayBuffer
- * （见 node_modules/jsnes/src/rom.js 的 `data instanceof ArrayBuffer` 分支），
- * 不需要再转成 binary string —— 那会为一个几 MB 的 ROM 额外分配一份等长字符串。
- */
-export function toRomBytes(rom: ArrayBuffer): Uint8Array {
-  return new Uint8Array(rom)
 }

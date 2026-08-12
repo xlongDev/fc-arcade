@@ -1,7 +1,7 @@
 /**
- * nostalgist（RetroArch / libretro fceumm 核心）适配器。
+ * nostalgist（RetroArch / libretro fceumm 核心）适配器。目前项目唯一的内核。
  *
- * 为什么它和 JsnesAdapter 的结构差这么多：
+ * 这个适配器和一般「每帧推进」的模拟器结构差很多，原因如下：
  *
  * 1. 时序不归我们管。RetroArch 在 WASM 里跑自己的主循环并按 vsync 节流，
  *    所以这里没有「跑一帧」的概念，我们的 rAF 只负责下发输入差分和累计时长。
@@ -185,7 +185,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
 
     this.#setStatus('loading')
     try {
-      // fceumm 支持的 mapper 远多于 jsnes，这里只做 iNES 头校验，不做 mapper 白名单
+      // fceumm 支持极广的 mapper 范围，这里只做 iNES 头校验，不做 mapper 白名单
       parseRomHeader(rom)
 
       this.#teardownInstance()
@@ -578,7 +578,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
     if (error instanceof EmulatorError) return error
     return new EmulatorError(
       'core-load-failed',
-      'RetroArch 内核加载失败，请确认 public/cores 下的 fceumm_libretro.js / .wasm 存在，或改用 jsnes 内核',
+      'RetroArch 内核加载失败，请确认 public/cores 下的 fceumm_libretro.js / .wasm 存在，或检查网络连接',
       { cause: error },
     )
   }

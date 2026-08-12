@@ -16,13 +16,12 @@ pnpm verify:dist    # 必跑：构建产物体检，不通过不要上线
 
 | 检查 | 说明 |
 |------|------|
-| AudioWorklet 未被内联 | `nes-audio-processor-*.js` 必须是独立文件，不能是 `data:text/javascript;base64,...`（否则生产环境音频静默失败） |
-| 独立 worklet 存在 | dist 内含含 `registerProcessor` 的处理器文件 |
+| fceumm 内核未进首屏 | 唯一内核只走动态 `import()`，不进首屏包 |
 | 字体存在 | 产物包含 woff2 字体 |
 | 首屏 JS 预算 | 220 KB gzip（超出仅 warning，仍放行） |
-| fceumm 内核未进首屏 | 可选内核只走动态 `import()`，不进首屏包 |
+| fceumm 内核未进首屏 | 唯一内核只走动态 `import()`，不进首屏包 |
 
-> **务必先 `verify:dist` 再发布**。`audioWorklet.addModule()` 加载 data URI 的失败只在生产构建暴露，本地 dev 永远测不出来。
+> **务必先 `verify:dist` 再发布**。模拟器音频由 fceumm（RetroArch）原生处理，项目不再依赖自定义 AudioWorklet；构建守卫重点确认首屏体积、字体与内核懒加载边界。
 
 ---
 
@@ -90,7 +89,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 | 能力 | 用途 | 降级 |
 |------|------|------|
 | ES2022 | 构建 target | 现代浏览器（2022+） |
-| AudioWorklet | NES 音频输出 | 不支持则无音 |
+| AudioContext（RetroArch 内部创建） | NES 音频输出 | 不支持则无音 |
 | Gamepad API | 手柄输入 | 无则仅键盘/触摸 |
 | IndexedDB | 游戏/ROM/存档存储 | 无则站点不可用 |
 | View Transitions API | 主题切换过渡动画 | 无则直接切换 |
@@ -106,7 +105,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
   - 当前实测：首屏 entry chunk ≈ 117 KB gzip + Motion 共享 chunk ≈ 95 KB gzip，浏览器首屏下载合计 ≈ 212 KB gzip（在预算内）。
   - 播放器、设置、游戏详情、导入向导均已懒加载，不计入首屏。
 - **懒加载边界**：`PlayerPage`、`SettingsPage`（路由级 lazy）、`ImportWizard`（Provider 内按需挂载）、`GameDetailDialog`（按需挂载）。
-- **fceumm 内核**：仅在用户切到该内核时通过 `await import()` 加载（~16 KB gzip），不进首屏。
+- **fceumm 内核**：项目唯一的实机内核，通过 `await import()` 加载（~16 KB gzip），不进首屏。
 
 如需进一步压首屏：把 `RootLayout` 的入场动画改用纯 CSS（去掉首屏对 Motion 的依赖），可把约 95 KB 的 Motion 共享 chunk 移出首屏关键路径。
 
@@ -122,7 +121,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 - **不提供任何 ROM**：用户必须自己上传合法拥有的备份。
 - **ROM 数据仅存本地（但可备份迁移）**：IndexedDB 跟随浏览器/设备，清站点数据即丢失。已提供「数据备份」功能（设置页「数据」分区）：导出 `.fcab`（本质是 zip）包含六张表 + 设置，恢复支持「合并」与「清空后恢复」两种模式。**换设备请走备份文件，而非依赖浏览器同步。**
-- **fceumm 内核已本地化**：fceumm 内核（`fceumm_libretro.js` + `fceumm_libretro.wasm`，由 nostalgist 封装）随仓库放在 `public/cores/`，由 `NostalgistAdapter` 通过 `import.meta.env.BASE_URL + 'cores'` 加载，**离线可用**，不再依赖 CDN。两个内核（jsnes / fceumm）均完全离线。如需更新内核版本，从 nostalgist 的 `retroarch-emscripten-build@v1.22.2` 重新下载同名文件覆盖即可。
+- **fceumm 内核已本地化**：fceumm 内核（`fceumm_libretro.js` + `fceumm_libretro.wasm`，由 nostalgist 封装）随仓库放在 `public/cores/`，由 `NostalgistAdapter` 通过 `import.meta.env.BASE_URL + 'cores'` 加载，**离线可用**，不再依赖 CDN。这是项目唯一的实机内核。如需更新内核版本，从 nostalgist 的 `retroarch-emscripten-build@v1.22.2` 重新下载同名文件覆盖即可。
 - **自学习库是 per-浏览器**：`crcLearn` 已随备份文件导出/导入，但日常不会跨设备自动同步。
 
 ---
@@ -131,7 +130,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 - [ ] `pnpm install` 用的是 pnpm
 - [ ] `pnpm build` 成功，`dist/` 已生成
-- [ ] **`pnpm verify:dist` 退出码为 0**（重点确认 AudioWorklet 是独立文件）
+- [ ] **`pnpm verify:dist` 退出码为 0**（重点确认首屏体积预算与 fceumm 内核未进首屏）
 - [ ] 子路径部署时确认 `base` 已正确设置
 - [ ] 静态服务器对 `/assets/*` 设了长效缓存（文件名带 hash）
 - [ ] 真机用静态服务器（非 dev）跑一遍：上传一个 ROM → 播放器有画面有声音 → 存档/读档可用

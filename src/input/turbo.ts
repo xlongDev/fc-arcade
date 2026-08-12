@@ -1,13 +1,11 @@
 /**
  * 连发（Turbo）。
  *
- * ## 为什么不用 jsnes 原生的 BUTTON_TURBO_A / BUTTON_TURBO_B
+ * ## 为什么用软件连发而不是内核原生连发键
  *
- * jsnes 的 Controller 确实有 BUTTON_TURBO_A = 8 / BUTTON_TURBO_B = 9 两个原生连发键，
- * 但本项目的跨层契约 `ButtonMask` 只有 8 个位（BUTTON_BIT，a..right），
- * JsnesAdapter#applyInput 也只遍历这 8 个键下发 buttonDown/buttonUp。
- * 要走原生连发就必须同时改 src/types/input.ts（全局冻结的契约）和已审校的 JsnesAdapter，
- * 代价远大于收益。
+ * 本项目的跨层契约 `ButtonMask` 只有 8 个位（BUTTON_BIT，a..right），
+ * 适配层（NostalgistAdapter）也只遍历这 8 个键下发 buttonDown/buttonUp。
+ * 走内核原生连发键就必须改这个全局冻结的契约，代价远大于收益，所以用软件连发（见下方实现）。
  *
  * 所以连发在输入层用「相位脉冲」实现：把持续按住的键按 rateHz 切成通断方波。
  * 附带好处是内核无关 —— NostalgistAdapter 走同一份 InputState，不需要各自再实现一遍。

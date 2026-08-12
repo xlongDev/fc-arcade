@@ -5,8 +5,8 @@
  * 再过一遍连发引擎，最后交给播放器喂给 EmulatorAdapter.setInput()。
  * 「任一源按下即为按下」，所以键盘和手柄可以随时无缝接管，不需要切换「当前输入设备」。
  *
- * 玩家编号在整条链路上都是 PlayerIndex(0 | 1)。转成 jsnes 的 ControllerId(1 | 2)
- * 是内核的事，落在 JsnesAdapter 的 CONTROLLERS 常量 + #applyInput 里，输入层不参与。
+ * 玩家编号在整条链路上都是 PlayerIndex(0 | 1)。转成内核的 ControllerId(1 | 2)
+ * 是适配层的事，由 NostalgistAdapter 把 ButtonMask 映射成 RetroArch 的按键，输入层不参与。
  *
  * 失焦清空由这里统一处理：blur / visibilitychange / pagehide 一律 clearAll()。
  * 少了这一步就会出现「Alt+Tab 切走再切回来，角色一直往右跑」的经典 bug ——
