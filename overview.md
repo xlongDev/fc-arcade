@@ -1,72 +1,28 @@
-# 完全移除 jsnes 内核 · 全部默认 fceumm
+# 修复：截图/上传封面后封面墙不更新
 
-**提交：`512c25d`（main，领先 origin/main 2 个提交：`13cfe0d` + `512c25d`）**
+## 现象
+游戏内点截图（或自动截图、在详情页上传自定义封面）后，提示"已设为封面"，但库里的封面墙仍显示旧图（或仍是程序化生成图）。
 
-## 做了什么
-把项目唯一的实机内核收敛为 **fceumm（经 nostalgist 封装的 RetroArch WASM）**，彻底删除 jsnes 这条内核路径及其专属支撑模块。
+## 根因
+封面显示走 `src/cover/coverCache.ts` 的引用计数 + objectURL 缓存：`acquireCover` 命中缓存时**直接返回旧 objectURL**（不重读库）。库里定义了 `invalidateCover(gameId)` 用于在"封面被改写后"作废旧 URL 并通知订阅组件重取——但**它从没在任何写入路径被调用**（grep 全仓只有 `invalidateAllCovers` 内部用到，用于清空/导入备份）。
 
-### 删除
-- `src/emulator/jsnes/`（JsnesAdapter + NesRenderer）—— 整个 jsnes 适配器目录。
-- `src/emulator/audio/`（NesAudioOutput + nes-audio-processor.js）—— jsnes 专属 AudioWorklet。fceumm 的音频由 RetroArch 原生接管，不再需要自定义 worklet。
-- `package.json` 里的 `jsnes` 依赖（lockfile 同步）。
+结果：截图/上传只写进了 IndexedDB，而封面墙缓存仍是旧 URL，所以封面不更新。
 
-### 类型 / 配置收窄
-- `EmulatorCore`：`'jsnes' | 'nostalgist'` → `'nostalgist'`（单一内核标识符，保留 `nostalgist` 指加载器库，不改成 fceumm）。
-- `CORE_DISPLAY_NAME`：`{ nostalgist: 'fceumm' }`。
-- `defaultCore` → `'nostalgist'`；`settingsStore.CORES` → `['nostalgist']`。
-- `createEmulator` 直接动态 `import('./nostalgist/NostalgistAdapter')`，去除 jsnes 分支。
-- `useEmulatorSession`：移除 `alternateCore()` 与 `coreOverride` 状态；`retry` / `switchCore` 改为同核重开（bump attempt），保留顶栏「切换内核」按钮可用。
+`useGameCover` 的刷新机制本身是好的（`version` 由 `subscribeCover`/`getCoverVersion` 驱动，会随 `invalidateCover` 重新取图）——只差写入时触发一次。
 
-### fceumm 版本
-- 联网重新拉取 `retroarch-emscripten-build@v1.22.2`（确认是上游最新 tag），解包 `public/cores/fceumm_libretro.{js,wasm}`，与既有本地化文件**字节一致**，即当前已是最新。
+## 修复
+在全部 3 个封面写入点写完 `coverDao` 后调用 `invalidateCover(gameId)`：
+- `src/features/player/PlayerPage.tsx`（手动截图 `captureCover`）
+- `src/features/player/usePlaytimeTracker.ts`（自动截图 `captureCover`）
+- `src/features/game-detail/components/CoverEditor.tsx`（上传 `applyFile`、重置 `resetCover`）
 
-### 文档与构建守卫
-- README / DEPLOY：去掉 jsnes、双核、AudioWorklet 内联守卫等描述；`verify:dist` 检查 1 改为「若发现 worklet 才校验 registerProcessor，否则放行」；`vite.config.ts` 移除 `assetsInlineLimit` 的 worklet 兜底。
-
-## 关键修复（否则质量门过不了）
-移除 jsnes 后 `NesAudioOutput` 成为孤儿 → 自定义 worklet 不再产出 → `verify:dist` 的「AudioWorklet 必须独立文件」检查失败。**修复：删 audio 模块 + 同步清理 vite/verify 守卫。**
+注意：刻意**不**用 `notifyLibraryChanged()` 触发整库刷新来替代——播放器页直接调它会触发 `useGameById` 重拉 → loading 闪烁 → 播放器被卸载重挂 → 模拟器重启（见上一轮修复）。`invalidateCover` 只动封面缓存，不影响播放器。
 
 ## 质量门（全绿）
 - `pnpm typecheck` ✓
-- `pnpm lint`：20 warnings / **0 errors**（全为预存）
-- `pnpm build` ✓（`NostalgistAdapter` 仍为独立 chunk，未进首屏）
-- `pnpm verify:dist`：**全部检查通过**，首屏 JS 112.9 KB gzip（预算 220 KB）
+- `pnpm lint` ✓（0 error，20 warning 均为预存）
+- `pnpm build` ✓
+- `pnpm verify:dist` ✓（首屏 JS gzip 116.2KB，预算 220KB 内）
 
-## 注意
-- 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
-- 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
-## 2026-08-12 追加修复：移除 fceumm 游戏画面左右红线
-
-### 现象
-切到 fceumm 后，游戏画面左右两侧出现竖向红线（用户截图《森林王子》两侧边缘泛红）。
-
-### 根因
-NES 有过扫描区（左右各 8px），很多游戏把背景色泄到这里；fceumm/RetroArch 默认输出完整 256×240，过扫描边会露出来，而 jsnes 时代只画了可视区。
-
-### 第一版（`fe165b0`，已弃用）
-在 `retroarchConfig` 加 `video_crop_overscan: true`，但经 nostalgist 传入后**不生效**，红线依旧。说明不要假设 retroarchConfig 的每个键都会生效。
-
-### 最终修复（渲染层 + 截图层硬裁）
-- `src/types/emulator.ts`：`NES_OVERSCAN_X=8` / `NES_VISIBLE_WIDTH=240` / `NES_VISIBLE_HEIGHT=240`。
-- `EmulatorScreen.tsx`：`fitSize` 改用 `NES_VISIBLE_*`；canvas CSS 宽度放大为 `size.width*(NES_WIDTH/NES_VISIBLE_WIDTH)`，父容器 `overflow-hidden` 居中 → 两侧过扫描被裁，显示 240×240 有效区。
-- `src/emulator/shared/canvas.ts`：`rescaleBlob` 增加可选 `crop`，先裁再放大。
-- `NostalgistAdapter.screenshot`：传 `crop:{x:8,y:0,w:240,h:240}`，截图同样去掉红线。
-- `PlayerPage` / `usePlaytimeTracker`：封面尺寸改用 `NES_VISIBLE_WIDTH/HEIGHT*scale`（封面不再带红线，尺寸 512→480）。
-
-### 质量门（全绿）
-typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部检查通过 ✓
-
-## 注意
-- 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
-- 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
-- 已全部推送到 GitHub（origin/main 已更新至 `fa87973`）。
-
-## 2026-08-12 UI/UX 改进：播放器界面改造
-
-- **移除切换内核 UI**：`PlayerTopBar` 删除切换内核按钮，`useEmulatorSession` 删除 `switchCore`。
-- **游戏区域圆角**：`EmulatorScreen` 非全屏时加 `rounded-2xl` 和细白边阴影；全屏时自动 `rounded-none` 以真正铺满。
-- **控制栏/光标自动隐藏**：`useAutoHideControls` idle 时间统一为 2s；新增 `useHideCursor`，游戏运行中控制栏隐藏且鼠标静止 2s 后隐藏光标。
-- **游戏内改键位**：提取可复用 `KeyboardMappingPanel`，底部控制栏增加「键位设置」按钮，游戏内 Sheet 改键即时同步给 `InputManager`。
-
-### 质量门（全绿）
-typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部检查通过 ✓（首屏 JS 116.2 KB gzip）
+## 验证建议
+进游戏点截图 → 退出回库，封面应变成刚截的图；详情页上传/重置自定义封面，库与详情页预览应同步更新。

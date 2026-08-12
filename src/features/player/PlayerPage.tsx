@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router'
 import { Button, EmptyState, Sheet, Spinner, useToast } from '@/components/ui'
 import { cn } from '@/lib/cn'
 import { IconCartridge } from '@/components/icons'
+import { invalidateCover } from '@/cover'
 import { coverDao, gameDao } from '@/data'
 import { useGameById } from '@/features/common/hooks/useGameById'
 import { useIsCompactViewport, useIsTouchDevice } from '@/features/common/hooks/useMediaQuery'
@@ -82,6 +83,9 @@ export function PlayerPage() {
         updatedAt: Date.now(),
       })
       await gameDao.update(game.id, { coverKind: 'screenshot' })
+      // 让封面缓存失效：库里的封面组件订阅了 cover 版本，失效后会重新取用新截图。
+      // 否则缓存命中时 acquireCover 直接返回旧 objectURL，截图写进了库但封面仍显示旧图。
+      invalidateCover(game.id)
       // 播放器内不挂载游戏库，无需广播 libraryChanged 让 useGameById 重拉（否则 loading 闪烁会
       // 把播放器卸载成 Spinner 再重挂，导致 canvas 节点替换、模拟器重启）。退出后会由库自身刷新。
       notifyStorageChanged()

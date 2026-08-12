@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react'
 import type { RefObject } from 'react'
 
+import { invalidateCover } from '@/cover'
 import { coverDao, gameDao, sessionDao } from '@/data'
 import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/lib/storageEvents'
 import { uid } from '@/lib/id'
@@ -54,6 +55,8 @@ export function usePlaytimeTracker({ game, adapterRef }: Options): (seconds: num
         updatedAt: Date.now(),
       })
       await gameDao.update(current.id, { coverKind: 'screenshot' })
+      // 让封面缓存失效，否则库里仍显示旧封面（acquireCover 缓存命中直接返回旧 objectURL）
+      invalidateCover(current.id)
       // 播放器内不挂载游戏库，无需广播 libraryChanged（否则 useGameById 重拉会触发 loading 闪烁、
       // 把播放器卸载重挂导致模拟器重启）。退出后由库自身刷新。
       notifyStorageChanged()

@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 
 import { Button, Spinner, useToast } from '@/components/ui'
 import { IconRefresh, IconTrash, IconUpload } from '@/components/icons'
-import { GeneratedCover, useGameCover } from '@/cover'
+import { GeneratedCover, invalidateCover, useGameCover } from '@/cover'
 import { coverDao, gameDao } from '@/data'
 import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/lib/storageEvents'
 import { displayTitle } from '@/features/common/lib/gameDisplay'
@@ -42,6 +42,8 @@ export function CoverEditor({ game, onChanged }: Props) {
         updatedAt: Date.now(),
       })
       await gameDao.update(game.id, { coverKind: 'custom' })
+      // 让封面缓存失效，否则预览与库里仍显示旧封面
+      invalidateCover(game.id)
       notifyLibraryChanged()
       notifyStorageChanged()
       onChanged()
@@ -63,6 +65,8 @@ export function CoverEditor({ game, onChanged }: Props) {
     try {
       await coverDao.remove(game.id)
       await gameDao.update(game.id, { coverKind: 'generated' })
+      // 让封面缓存失效，否则预览与库里仍显示已删除的旧封面
+      invalidateCover(game.id)
       notifyLibraryChanged()
       notifyStorageChanged()
       onChanged()
