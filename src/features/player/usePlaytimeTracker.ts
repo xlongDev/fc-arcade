@@ -6,7 +6,7 @@ import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/li
 import { uid } from '@/lib/id'
 import { useSettingsStore } from '@/store'
 import type { EmulatorAdapter } from '@/types/emulator'
-import { NES_HEIGHT, NES_WIDTH } from '@/types/emulator'
+import { NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
 import type { GameView } from '@/types/game'
 
 /** 少于这个时长不记一次游玩，避免误点进来就退出也算一局 */
@@ -49,8 +49,8 @@ export function usePlaytimeTracker({ game, adapterRef }: Options): (seconds: num
         gameId: current.id,
         kind: 'screenshot',
         blob,
-        width: NES_WIDTH * COVER_SCALE,
-        height: NES_HEIGHT * COVER_SCALE,
+        width: NES_VISIBLE_WIDTH * COVER_SCALE,
+        height: NES_VISIBLE_HEIGHT * COVER_SCALE,
         updatedAt: Date.now(),
       })
       await gameDao.update(current.id, { coverKind: 'screenshot' })

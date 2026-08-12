@@ -12,7 +12,7 @@ import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/li
 import { TouchGamepad } from '@/input'
 import { useSettingsStore } from '@/store'
 import type { EmulatorAdapter } from '@/types/emulator'
-import { NES_HEIGHT, NES_WIDTH } from '@/types/emulator'
+import { NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
 import type { NesButton } from '@/types/input'
 import type { SaveSlot } from '@/types/storage'
 
@@ -72,8 +72,8 @@ export function PlayerPage() {
         gameId: game.id,
         kind: 'screenshot',
         blob,
-        width: NES_WIDTH * SCREENSHOT_SCALE,
-        height: NES_HEIGHT * SCREENSHOT_SCALE,
+        width: NES_VISIBLE_WIDTH * SCREENSHOT_SCALE,
+        height: NES_VISIBLE_HEIGHT * SCREENSHOT_SCALE,
         updatedAt: Date.now(),
       })
       await gameDao.update(game.id, { coverKind: 'screenshot' })

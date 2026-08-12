@@ -22,6 +22,14 @@ export const CORE_DISPLAY_NAME: Record<EmulatorCore, string> = {
 
 export const NES_WIDTH = 256
 export const NES_HEIGHT = 240
+/**
+ * NES 左右各 8px 是过扫描（overscan）区，不少游戏会把背景色泄到这里，
+ * 在完整 256x240 输出上表现为左右细边（如红色竖线）。
+ * 这里定义裁掉两侧过扫描后的可视区域，供显示与截图统一使用。
+ */
+export const NES_OVERSCAN_X = 8
+export const NES_VISIBLE_WIDTH = NES_WIDTH - NES_OVERSCAN_X * 2
+export const NES_VISIBLE_HEIGHT = NES_HEIGHT
 /** NTSC 实际帧率，不是整 60 */
 export const NES_FPS = 60.0988
 /**

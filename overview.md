@@ -35,4 +35,28 @@
 ## 注意
 - 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
 - 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
-- 尚未推送到 GitHub（本地领先 origin 2 个提交）。如需推送请告知。
+## 2026-08-12 追加修复：移除 fceumm 游戏画面左右红线
+
+### 现象
+切到 fceumm 后，游戏画面左右两侧出现竖向红线（用户截图《森林王子》两侧边缘泛红）。
+
+### 根因
+NES 有过扫描区（左右各 8px），很多游戏把背景色泄到这里；fceumm/RetroArch 默认输出完整 256×240，过扫描边会露出来，而 jsnes 时代只画了可视区。
+
+### 第一版（`fe165b0`，已弃用）
+在 `retroarchConfig` 加 `video_crop_overscan: true`，但经 nostalgist 传入后**不生效**，红线依旧。说明不要假设 retroarchConfig 的每个键都会生效。
+
+### 最终修复（渲染层 + 截图层硬裁）
+- `src/types/emulator.ts`：`NES_OVERSCAN_X=8` / `NES_VISIBLE_WIDTH=240` / `NES_VISIBLE_HEIGHT=240`。
+- `EmulatorScreen.tsx`：`fitSize` 改用 `NES_VISIBLE_*`；canvas CSS 宽度放大为 `size.width*(NES_WIDTH/NES_VISIBLE_WIDTH)`，父容器 `overflow-hidden` 居中 → 两侧过扫描被裁，显示 240×240 有效区。
+- `src/emulator/shared/canvas.ts`：`rescaleBlob` 增加可选 `crop`，先裁再放大。
+- `NostalgistAdapter.screenshot`：传 `crop:{x:8,y:0,w:240,h:240}`，截图同样去掉红线。
+- `PlayerPage` / `usePlaytimeTracker`：封面尺寸改用 `NES_VISIBLE_WIDTH/HEIGHT*scale`（封面不再带红线，尺寸 512→480）。
+
+### 质量门（全绿）
+typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部检查通过 ✓
+
+## 注意
+- 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
+- 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
+- 尚未推送到 GitHub（本地领先 origin 4 个提交：13cfe0d、512c25d、fe165b0、本次红线硬裁）。如需推送请告知。

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Ref } from 'react'
 
 import { cn } from '@/lib/cn'
-import { NES_HEIGHT, NES_WIDTH } from '@/types/emulator'
+import { NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH, NES_WIDTH } from '@/types/emulator'
 import type { ScreenFilter } from '@/types/ui'
 
 /** 滤镜叠加层。纯 CSS，不占 GPU 纹理，切换零成本。 */
@@ -19,14 +19,22 @@ interface Size {
   height: number
 }
 
-/** 按容器尺寸算出保持 8:7 像素比的显示尺寸；整数缩放时向下取整到整数倍 */
+/**
+ * 按容器尺寸算出保持像素比的显示尺寸；整数缩放时向下取整到整数倍。
+ *
+ * 计算基准用 NES_VISIBLE_*（已裁掉左右过扫描），因为最终用户看到的
+ * 就是 240x240 的有效区域；canvas 实际纹理仍是 256x240，由父容器
+ * overflow-hidden 把两侧 8px 裁掉。
+ */
 function fitSize(box: Size, integerScale: boolean): Size {
-  if (box.width <= 0 || box.height <= 0) return { width: NES_WIDTH, height: NES_HEIGHT }
-  const scale = Math.min(box.width / NES_WIDTH, box.height / NES_HEIGHT)
+  if (box.width <= 0 || box.height <= 0) {
+    return { width: NES_VISIBLE_WIDTH, height: NES_VISIBLE_HEIGHT }
+  }
+  const scale = Math.min(box.width / NES_VISIBLE_WIDTH, box.height / NES_VISIBLE_HEIGHT)
   const applied = integerScale ? Math.max(1, Math.floor(scale)) : scale
   return {
-    width: Math.round(NES_WIDTH * applied),
-    height: Math.round(NES_HEIGHT * applied),
+    width: Math.round(NES_VISIBLE_WIDTH * applied),
+    height: Math.round(NES_VISIBLE_HEIGHT * applied),
   }
 }
 
@@ -66,16 +74,22 @@ export function EmulatorScreen({ canvasRef, filter, integerScale, dimmed, onActi
       onPointerDown={onActivate}
     >
       <div
-        className="relative shrink-0 transition-[width,height] duration-200"
+        className="relative flex shrink-0 items-center justify-center overflow-hidden transition-[width,height] duration-200"
         style={{ width: size.width, height: size.height }}
       >
         {/* 注意：不要在这里写 width/height 属性。
           显示 canvas 的实际像素尺寸由模拟器适配器（NostalgistAdapter 经 ResizeObserver）
           根据容器 CSS 尺寸和设备像素比动态维护。React 每次渲染都设置 width/height 会
-          重置 WebGL/2D 绘图缓冲区，导致截图或控制栏显隐时出现一闪而过的黑屏。 */}
+          重置 WebGL/2D 绘图缓冲区，导致截图或控制栏显隐时出现一闪而过的黑屏。
+
+          宽度特意大于父容器：模拟器输出 256x240，但左右各 8px 是过扫描区，
+          由父容器 overflow-hidden 裁掉，只显示中间 240x240。 */}
         <canvas
           ref={canvasRef}
-          className="block size-full [image-rendering:pixelated]"
+          className="block h-full [image-rendering:pixelated]"
+          style={{
+            width: Math.round(size.width * (NES_WIDTH / NES_VISIBLE_WIDTH)),
+          }}
         />
         {filter === 'none' ? null : (
           <div

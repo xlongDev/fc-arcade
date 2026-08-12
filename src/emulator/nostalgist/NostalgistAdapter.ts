@@ -28,7 +28,7 @@ import type {
   SaveStatePayload,
   ScreenshotOptions,
 } from '@/types/emulator'
-import { EmulatorError, NES_FPS } from '@/types/emulator'
+import { EmulatorError, NES_FPS, NES_OVERSCAN_X, NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
 import type { ButtonMask, InputState, NesButton, PlayerIndex } from '@/types/input'
 import { BUTTON_BIT, EMPTY_INPUT_STATE } from '@/types/input'
 import type { Unsubscribe } from '@/types/common'
@@ -356,7 +356,14 @@ export class NostalgistAdapter implements EmulatorAdapter {
       throw new EmulatorError('runtime', '游戏还没开始运行，无法截图')
     }
     const raw = await nostalgist.screenshot()
-    return await rescaleBlob(raw, options.scale ?? 2, options.type ?? 'image/png', options.quality)
+    // 裁掉左右过扫描区：RetroArch 截图是 256x240 的 NES native 画面，
+    // 左右各 8px 是过扫描，不少游戏会泄背景色（红线就来自这里）。
+    return await rescaleBlob(raw, options.scale ?? 2, options.type ?? 'image/png', options.quality, {
+      x: NES_OVERSCAN_X,
+      y: 0,
+      width: NES_VISIBLE_WIDTH,
+      height: NES_VISIBLE_HEIGHT,
+    })
   }
 
   getStats(): EmulatorStats {
@@ -389,9 +396,9 @@ export class NostalgistAdapter implements EmulatorAdapter {
         savestate_thumbnail_enable: false,
         video_smooth: false,
         video_scale_integer: this.#options.integerScale,
-        // NES 左右/上下 8px 左右是过扫描区，很多游戏会把背景色（如本截图里的红色）
-        // 泄到这里；fceumm 默认输出完整画面，开启 crop 可让显示区域与 jsnes 时代一致
-        video_crop_overscan: true,
+        // 左右过扫描区（NES 两侧各 8px）的裁剪不放这里：
+        // RetroArch 的 video_crop_overscan 经 nostalgist 传入后不生效。
+        // 改为在 EmulatorScreen（CSS overflow 裁显示）和 screenshot（rescaleBlob 裁 Blob）层处理。
         // RetroArch 自带的 OSD 提示、帧率显示和快捷菜单在嵌入场景里只会干扰
         video_font_enable: false,
         fps_show: false,

@@ -31,27 +31,36 @@ export async function canvasToBlob(
 
 /**
  * 把已有的图片 Blob 按倍数放大并转码。
- * 倍数为 1 且格式已经一致时直接返回原 Blob，省掉一次解码 + 编码。
+ * 倍数为 1 且格式已经一致、且无需裁剪时直接返回原 Blob，省掉一次解码 + 编码。
+ *
+ * crop 可选：先在源图上裁掉一个子矩形（用于去掉 NES 左右过扫描区），
+ * 再按倍数放大。不传则整图处理。
  */
 export async function rescaleBlob(
   source: Blob,
   scale: number,
   type: string,
   quality?: number,
+  crop?: { x: number; y: number; width: number; height: number },
 ): Promise<Blob> {
   const factor = clampScreenshotScale(scale)
-  if (factor === 1 && source.type === type) return source
+  const noCrop = !crop || (crop.x === 0 && crop.y === 0 && crop.width === 0 && crop.height === 0)
+  if (factor === 1 && source.type === type && noCrop) return source
 
   const bitmap = await createImageBitmap(source)
   try {
+    const sx = crop ? crop.x : 0
+    const sy = crop ? crop.y : 0
+    const sw = crop && crop.width > 0 ? crop.width : bitmap.width
+    const sh = crop && crop.height > 0 ? crop.height : bitmap.height
     const canvas = document.createElement('canvas')
-    canvas.width = bitmap.width * factor
-    canvas.height = bitmap.height * factor
+    canvas.width = sw * factor
+    canvas.height = sh * factor
     const ctx = canvas.getContext('2d', { alpha: false })
     if (!ctx) throw new Error('无法创建截图上下文')
     // 像素画放大必须关掉插值，否则会糊成一片
     ctx.imageSmoothingEnabled = false
-    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    ctx.drawImage(bitmap, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
     return await canvasToBlob(canvas, type, quality)
   } finally {
     bitmap.close()
