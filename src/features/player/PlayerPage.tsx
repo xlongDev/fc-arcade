@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react'
 import { useNavigate, useParams } from 'react-router'
 
 import { Button, EmptyState, Sheet, Spinner, useToast } from '@/components/ui'
+import { cn } from '@/lib/cn'
 import { IconCartridge } from '@/components/icons'
 import { coverDao, gameDao } from '@/data'
 import { useGameById } from '@/features/common/hooks/useGameById'
@@ -13,17 +14,19 @@ import { TouchGamepad } from '@/input'
 import { useSettingsStore } from '@/store'
 import type { EmulatorAdapter } from '@/types/emulator'
 import { NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
-import type { NesButton } from '@/types/input'
+import type { KeyboardMap, NesButton } from '@/types/input'
 import type { SaveSlot } from '@/types/storage'
 
 import { EmulatorScreen } from './components/EmulatorScreen'
 import { PlayerControlBar } from './components/PlayerControlBar'
 import { PlayerStatusOverlay } from './components/PlayerStatusOverlay'
+import { KeyboardMappingPanel } from './components/KeyboardMappingPanel'
 import { PlayerTopBar } from './components/PlayerTopBar'
 import { SaveSlotPanel } from './components/SaveSlotPanel'
 import { useAutoHideControls } from './useAutoHideControls'
 import { useEmulatorSession } from './useEmulatorSession'
 import { useFullscreen } from './useFullscreen'
+import { useHideCursor } from './useHideCursor'
 import { usePlayerHotkeys } from './usePlayerHotkeys'
 import { usePlayerInput } from './usePlayerInput'
 import { usePlaytimeTracker } from './usePlaytimeTracker'
@@ -50,6 +53,7 @@ export function PlayerPage() {
 
   const [touchVisible, setTouchVisible] = useState(isTouch)
   const [savesOpen, setSavesOpen] = useState(false)
+  const [keyboardOpen, setKeyboardOpen] = useState(false)
 
   const inputRef = usePlayerInput(touchVisible)
   const onPlaytime = usePlaytimeTracker({ game, adapterRef })
@@ -58,8 +62,9 @@ export function PlayerPage() {
   const fullscreen = useFullscreen(shellRef)
 
   const busy = session.status === 'loading' || session.status === 'idle'
-  const keepControls = !session.running || savesOpen || session.error !== null
+  const keepControls = !session.running || savesOpen || keyboardOpen || session.error !== null
   const controls = useAutoHideControls(keepControls)
+  const hideCursor = useHideCursor(session.running && !controls.visible && !savesOpen)
 
   const exit = useCallback(() => void navigate('/'), [navigate])
 
@@ -89,6 +94,15 @@ export function PlayerPage() {
   const openSaves = useCallback(() => {
     if (compact) setSavesOpen(true)
   }, [compact])
+
+  const handleKeyboardChange = useCallback(
+    (next: KeyboardMap) => {
+      setSetting('keyboardMap', next)
+      // 立刻同步给当前游戏的 InputManager，否则要退出再进才生效
+      inputRef.current?.setKeyboardMap(next)
+    },
+    [setSetting, inputRef],
+  )
 
   usePlayerHotkeys(
     {
@@ -141,7 +155,10 @@ export function PlayerPage() {
   return (
     <div
       ref={shellRef}
-      className="fixed inset-0 z-40 flex flex-col bg-black"
+      className={cn(
+        'fixed inset-0 z-40 flex flex-col bg-black',
+        hideCursor && 'cursor-none',
+      )}
       onPointerMove={controls.ping}
     >
       <div className="relative flex-1 overflow-hidden">
@@ -150,6 +167,7 @@ export function PlayerPage() {
           filter={settings.screenFilter}
           integerScale={settings.integerScale}
           dimmed={!session.running && session.error === null && !busy}
+          fullscreen={fullscreen.active}
           onActivate={() => {
             controls.ping()
             if (session.audioBlocked) void session.unlockAudio()
@@ -178,10 +196,8 @@ export function PlayerPage() {
               fullscreen={fullscreen.active}
               fullscreenSupported={fullscreen.supported}
               reduceMotion={reduceMotion}
-              switchingCore={session.status === 'loading'}
               onExit={exit}
               onToggleFullscreen={fullscreen.toggle}
-              onSwitchCore={session.switchCore}
             />
           ) : null}
 
@@ -205,6 +221,7 @@ export function PlayerPage() {
               onScreenshot={() => void captureCover()}
               onToggleTouch={() => setTouchVisible((v) => !v)}
               onOpenSaves={openSaves}
+              onOpenKeyboard={() => setKeyboardOpen(true)}
             />
           ) : null}
         </AnimatePresence>
@@ -224,6 +241,18 @@ export function PlayerPage() {
 
       <Sheet open={savesOpen} onClose={() => setSavesOpen(false)} title="存档 / 读档">
         {savePanel}
+      </Sheet>
+
+      <Sheet
+        open={keyboardOpen}
+        onClose={() => setKeyboardOpen(false)}
+        title="键位设置"
+        description="点击按键后按下要绑定的物理键"
+      >
+        <KeyboardMappingPanel
+          keyboardMap={settings.keyboardMap}
+          onChange={handleKeyboardChange}
+        />
       </Sheet>
     </div>
   )

@@ -59,4 +59,14 @@ typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部�
 ## 注意
 - 移除内核不只是删目录：任何「仅该核使用」的支撑模块会成为孤儿并影响构建产物/守卫，删除后务必全量重跑 `build` + `verify:dist` 并扫一遍孤儿引用。
 - 内存日志（`.workbuddy/memory/`）已记录本次改动，但按项目约定被 `.gitignore` 排除，不进公开仓库。
-- 尚未推送到 GitHub（本地领先 origin 4 个提交：13cfe0d、512c25d、fe165b0、本次红线硬裁）。如需推送请告知。
+- 已全部推送到 GitHub（origin/main 已更新至 `213f1fc`）。
+
+## 2026-08-12 UI/UX 改进：播放器界面改造
+
+- **移除切换内核 UI**：`PlayerTopBar` 删除切换内核按钮，`useEmulatorSession` 删除 `switchCore`。
+- **游戏区域圆角**：`EmulatorScreen` 非全屏时加 `rounded-2xl` 和细白边阴影；全屏时自动 `rounded-none` 以真正铺满。
+- **控制栏/光标自动隐藏**：`useAutoHideControls` idle 时间统一为 2s；新增 `useHideCursor`，游戏运行中控制栏隐藏且鼠标静止 2s 后隐藏光标。
+- **游戏内改键位**：提取可复用 `KeyboardMappingPanel`，底部控制栏增加「键位设置」按钮，游戏内 Sheet 改键即时同步给 `InputManager`。
+
+### 质量门（全绿）
+typecheck ✓ / lint 20 warnings 0 errors ✓ / build ✓ / verify:dist 全部检查通过 ✓（首屏 JS 116.2 KB gzip）

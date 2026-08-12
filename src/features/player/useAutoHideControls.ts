@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const IDLE_MS = 2600
+const IDLE_MS = 2000
 
 /**
  * 控制栏自动淡出。

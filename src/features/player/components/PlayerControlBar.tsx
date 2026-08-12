@@ -5,6 +5,7 @@ import { IconButton, Popover, Slider } from '@/components/ui'
 import {
   IconCamera,
   IconGamepad,
+  IconKeyboard,
   IconMute,
   IconPause,
   IconPlay,
@@ -30,6 +31,7 @@ interface Props {
   onScreenshot: () => void
   onToggleTouch: () => void
   onOpenSaves: () => void
+  onOpenKeyboard: () => void
 }
 
 /**
@@ -51,6 +53,7 @@ export function PlayerControlBar({
   onScreenshot,
   onToggleTouch,
   onOpenSaves,
+  onOpenKeyboard,
 }: Props) {
   const saveButton = (
     <IconButton label="存档 / 读档" variant="ghost" onClick={onOpenSaves}>
@@ -123,6 +126,10 @@ export function PlayerControlBar({
             {muted ? <IconMute size={18} /> : <IconVolume size={18} />}
           </IconButton>
         </div>
+
+        <IconButton label="键位设置" variant="ghost" onClick={onOpenKeyboard}>
+          <IconKeyboard size={18} />
+        </IconButton>
 
         {showTouchToggle ? (
           <IconButton

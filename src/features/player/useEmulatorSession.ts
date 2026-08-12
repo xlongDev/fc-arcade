@@ -41,10 +41,8 @@ export interface EmulatorSession {
   resume: () => void
   togglePause: () => void
   reset: () => void
-  /** 出错后重建整个会话，并自动尝试另一个内核 */
+  /** 出错后重建整个会话 */
   retry: () => void
-  /** 手动切换当前游戏使用的内核并重新加载 */
-  switchCore: () => void
   unlockAudio: () => Promise<void>
 }
 
@@ -279,11 +277,6 @@ export function useEmulatorSession({
     setAttempt((n) => n + 1)
   }, [])
 
-  const switchCore = useCallback(() => {
-    // 当前只有一个内核，切换即重建当前会话（保持 PlayerTopBar 的切换按钮可用）
-    setAttempt((n) => n + 1)
-  }, [])
-
   const unlockAudio = useCallback(async () => {
     const adapter = adapterRef.current
     if (!adapter) return
@@ -328,7 +321,6 @@ export function useEmulatorSession({
     togglePause,
     reset,
     retry,
-    switchCore,
     unlockAudio,
   }
 }

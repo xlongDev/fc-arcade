@@ -44,11 +44,20 @@ interface Props {
   integerScale: boolean
   /** 暂停时给画面加一层压暗，提示状态 */
   dimmed: boolean
+  /** 全屏模式下去掉圆角，让画面真正铺满 */
+  fullscreen?: boolean
   onActivate: () => void
 }
 
 /** 模拟器画面。负责等比/整数缩放与屏幕滤镜，不碰模拟器本身。 */
-export function EmulatorScreen({ canvasRef, filter, integerScale, dimmed, onActivate }: Props) {
+export function EmulatorScreen({
+  canvasRef,
+  filter,
+  integerScale,
+  dimmed,
+  fullscreen = false,
+  onActivate,
+}: Props) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [box, setBox] = useState<Size>({ width: 0, height: 0 })
 
@@ -74,7 +83,10 @@ export function EmulatorScreen({ canvasRef, filter, integerScale, dimmed, onActi
       onPointerDown={onActivate}
     >
       <div
-        className="relative flex shrink-0 items-center justify-center overflow-hidden transition-[width,height] duration-200"
+        className={cn(
+          'relative flex shrink-0 items-center justify-center overflow-hidden transition-[width,height] duration-200',
+          fullscreen ? 'rounded-none' : 'rounded-2xl shadow-[0_0_0_1px_rgba(255,255,255,0.06)] shadow-2xl',
+        )}
         style={{ width: size.width, height: size.height }}
       >
         {/* 注意：不要在这里写 width/height 属性。

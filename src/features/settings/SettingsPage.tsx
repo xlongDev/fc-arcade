@@ -7,13 +7,12 @@
  * 直接 setSetting('themeId', ...) 会绕开过渡动画，且与事件回写打架，不要用。
  * 其余设置项一律走 useSettingsStore().setSetting。
  */
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 
 import {
   Button,
   Card,
   Dialog,
-  Kbd,
   NumberInput,
   Segmented,
   Select,
@@ -34,19 +33,14 @@ import {
 } from '@/components/icons'
 import { THEME_LIST, useTheme } from '@/theme'
 import { useSettingsStore } from '@/store'
-import {
-  assignKey,
-  captureKeyCode,
-  findKeyConflicts,
-  unassignKey,
-} from '@/input'
+import { DEFAULT_INPUT_MAPS } from '@/store'
 import { BUTTON_LABEL, NES_BUTTONS } from '@/types/input'
-import type { NesButton, PlayerIndex, TurboConfig } from '@/types/input'
+import type { NesButton, TurboConfig } from '@/types/input'
 import { LAYOUT_LABEL, LIBRARY_LAYOUTS, SORT_LABEL } from '@/types/ui'
 import type { LibraryLayout, ScreenFilter } from '@/types/ui'
 import type { GameSortKey } from '@/types/storage'
 import type { EmulatorCore } from '@/types/emulator'
-import { DEFAULT_INPUT_MAPS } from '@/store'
+import { KeyboardMappingPanel } from '@/features/player/components/KeyboardMappingPanel'
 import {
   BackupError,
   downloadBackup,
@@ -392,132 +386,21 @@ function ControlsSection() {
 
 /* --------------------------------- 键盘 --------------------------------- */
 
-function prettifyCode(code: string): string {
-  if (code === 'Space') return 'Space'
-  if (code === 'Enter') return 'Enter'
-  if (code.startsWith('Key')) return code.slice(3)
-  if (code.startsWith('Digit')) return code.slice(5)
-  if (code.startsWith('Arrow')) {
-    return { ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→' }[code] ?? code
-  }
-  if (code.startsWith('Shift')) return code.includes('Left') ? 'L-Shift' : 'R-Shift'
-  if (code.startsWith('Control')) return code.includes('Left') ? 'L-Ctrl' : 'R-Ctrl'
-  if (code.startsWith('Alt')) return code.includes('Left') ? 'L-Alt' : 'R-Alt'
-  return code
-}
-
 function KeyboardSection() {
   const keyboardMap = useSettingsStore((s) => s.settings.keyboardMap)
   const setSetting = useSettingsStore((s) => s.setSetting)
-  const [player, setPlayer] = useState<PlayerIndex>(0)
-  const [capturing, setCapturing] = useState<NesButton | null>(null)
-
-  const conflicts = useMemo(() => findKeyConflicts(keyboardMap), [keyboardMap])
-  const conflictCodes = useMemo(
-    () => new Set(conflicts.map((conflict) => conflict.code)),
-    [conflicts],
-  )
-
-  const bind = async (button: NesButton) => {
-    setCapturing(button)
-    try {
-      const code = await captureKeyCode()
-      if (code) {
-        const next = assignKey(keyboardMap, player, button, code, {
-          exclusive: true,
-          replace: true,
-        })
-        setSetting('keyboardMap', next)
-      }
-    } finally {
-      setCapturing(null)
-    }
-  }
-
-  const clearButton = (button: NesButton) => {
-    let next = keyboardMap
-    for (const code of keyboardMap[player][button]) {
-      next = unassignKey(next, player, button, code)
-    }
-    setSetting('keyboardMap', next)
-  }
 
   return (
     <Section
       title="键盘映射"
       description="点击按键后按下要绑定的物理键。同一物理键被多个动作占用时会高亮提醒。"
     >
-      <Row label="玩家">
-        <Segmented
-          value={String(player)}
-          onChange={(next) => setPlayer(Number(next) as PlayerIndex)}
-          options={[
-            { value: '0', label: '玩家 1' },
-            { value: '1', label: '玩家 2' },
-          ]}
-        />
-      </Row>
-
-      <div className="flex flex-col gap-1.5">
-        {NES_BUTTONS.map((button) => {
-          const codes = keyboardMap[player][button]
-          const isCapturing = capturing === button
-          return (
-            <div
-              key={button}
-              className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2"
-            >
-              <span className="w-20 text-sm text-text">{BUTTON_LABEL[button]}</span>
-              <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                {codes.length === 0 ? (
-                  <span className="text-xs text-faint">未绑定</span>
-                ) : (
-                  codes.map((code) => (
-                    <Kbd
-                      key={code}
-                      className={
-                        conflictCodes.has(code)
-                          ? 'border-danger text-danger'
-                          : undefined
-                      }
-                    >
-                      {prettifyCode(code)}
-                    </Kbd>
-                  ))
-                )}
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <Button
-                  size="sm"
-                  variant={isCapturing ? 'primary' : 'secondary'}
-                  onClick={() => void bind(button)}
-                  disabled={capturing !== null && !isCapturing}
-                >
-                  {isCapturing ? '按下按键…' : '绑定'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => clearButton(button)}
-                  disabled={codes.length === 0 || capturing !== null}
-                >
-                  清除
-                </Button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          icon={<IconReset size={15} />}
-          onClick={() => setSetting('keyboardMap', DEFAULT_INPUT_MAPS.keyboardMap)}
-        >
-          恢复默认键位
-        </Button>
-      </div>
+      <KeyboardMappingPanel
+        keyboardMap={keyboardMap}
+        onChange={(next) => setSetting('keyboardMap', next)}
+        showReset
+        onReset={() => setSetting('keyboardMap', DEFAULT_INPUT_MAPS.keyboardMap)}
+      />
     </Section>
   )
 }
