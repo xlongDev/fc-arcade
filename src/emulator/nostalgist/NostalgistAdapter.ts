@@ -50,6 +50,12 @@ type LaunchOptions = Parameters<NostalgistStatic['launch']>[0]
 
 const CORE_NAME = 'fceumm'
 
+/**
+ * fceumm 内核本地化：把 fceumm_libretro.js / .wasm 放在 public/cores 下，离线也能跑。
+ * 用 BASE_URL 拼接，兼容子路径部署（如 GitHub Pages 的 /fc-arcade/）。
+ */
+const LOCAL_CORE_BASE = `${import.meta.env.BASE_URL}cores`
+
 /** RetroArch 里玩家编号从 1 开始 */
 const PLAYER_NUMBER: readonly [number, number] = [1, 2]
 
@@ -108,7 +114,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
 
   #options: Required<Pick<EmulatorOptions, 'volume' | 'audio' | 'integerScale'>> & {
     coreBaseUrl?: string
-  } = { volume: 0.7, audio: true, integerScale: false }
+  } = { volume: 0.7, audio: true, integerScale: false, coreBaseUrl: LOCAL_CORE_BASE }
 
   #rafId: number | null = null
   #disposed = false
@@ -572,7 +578,7 @@ export class NostalgistAdapter implements EmulatorAdapter {
     if (error instanceof EmulatorError) return error
     return new EmulatorError(
       'core-load-failed',
-      'RetroArch 内核加载失败，请检查网络或改用 jsnes 内核',
+      'RetroArch 内核加载失败，请确认 public/cores 下的 fceumm_libretro.js / .wasm 存在，或改用 jsnes 内核',
       { cause: error },
     )
   }

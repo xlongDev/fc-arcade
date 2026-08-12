@@ -122,7 +122,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 
 - **不提供任何 ROM**：用户必须自己上传合法拥有的备份。
 - **ROM 数据仅存本地（但可备份迁移）**：IndexedDB 跟随浏览器/设备，清站点数据即丢失。已提供「数据备份」功能（设置页「数据」分区）：导出 `.fcab`（本质是 zip）包含六张表 + 设置，恢复支持「合并」与「清空后恢复」两种模式。**换设备请走备份文件，而非依赖浏览器同步。**
-- **nostalgist 内核需要联网加载 RetroArch WASM**：首次切到该内核会拉取 wasm 资源；jsnes 内核完全离线。
+- **nostalgist 内核已本地化**：fceumm 内核（`fceumm_libretro.js` + `fceumm_libretro.wasm`）随仓库放在 `public/cores/`，由 `NostalgistAdapter` 通过 `import.meta.env.BASE_URL + 'cores'` 加载，**离线可用**，不再依赖 CDN。两个内核（jsnes / nostalgist）均完全离线。如需更新内核版本，从 nostalgist 的 `retroarch-emscripten-build@v1.22.2` 重新下载同名文件覆盖即可。
 - **自学习库是 per-浏览器**：`crcLearn` 已随备份文件导出/导入，但日常不会跨设备自动同步。
 
 ---

@@ -10,7 +10,7 @@
 
 ## 特性
 
-- **浏览器端模拟器**：基于 [jsnes](https://github.com/bfirsh/jsnes) 的实机内核，支持音频（AudioWorklet，零延迟采样）、画面整数缩放、扫描线滤镜、FPS 显示。可选 [nostalgist](https://github.com/derekhe/nostalgist)（RetroArch WASM）内核。
+- **浏览器端模拟器**：基于 [jsnes](https://github.com/bfirsh/jsnes) 的实机内核，支持音频（AudioWorklet，零延迟采样）、画面整数缩放、扫描线滤镜、FPS 显示。可选 [nostalgist](https://github.com/derekhe/nostalgist)（RetroArch WASM）内核，**fceumm 内核已本地化到 `public/cores/`，两个内核均完全离线可用**。
 - **ROM 自上传 + 自动识别**：上传 `.nes` / `.fds` / `.unf` 文件或 zip 合集，自动解析 iNES 头、计算 CRC32，按「CRC 精确命中 → 自学习库 → 文件名模糊匹配 → 兜底」四级信号推断游戏身份，并给出置信度。
 - **CRC 自学习闭环**：某次你手动改对了标题，下次同一个 ROM 直接精确命中你改过的名字。
 - **封面三层递进**：用户上传封面 → 运行时自动截图 → 程序化生成的液态玻璃封面兜底（同一游戏永远同一张图，确定性生成）。
