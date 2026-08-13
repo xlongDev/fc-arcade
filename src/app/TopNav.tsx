@@ -1,10 +1,19 @@
 import { NavLink } from 'react-router'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 
-import { Button, IconButton, Tooltip } from '@/components/ui'
-import { IconGamepad, IconGitHub, IconMoon, IconSettings, IconSun, IconUpload } from '@/components/icons'
+import { Button, IconButton, Popover, Tooltip } from '@/components/ui'
+import {
+  IconGamepad,
+  IconGitHub,
+  IconMoon,
+  IconPalette,
+  IconSun,
+  IconUpload,
+} from '@/components/icons'
 import { useImport } from '@/features/import/ImportContext'
 import { LibrarySearchField } from '@/features/library/components/LibrarySearchField'
+import { ThemePickerContent } from '@/features/settings/components/ThemePickerPopover'
 import { SPRING_SOFT } from '@/features/common/motion'
 import { useTheme } from '@/theme'
 import { cn } from '@/lib/cn'
@@ -24,6 +33,7 @@ interface Props {
 export function TopNav({ showSearch }: Props) {
   const { mode, toggleMode } = useTheme()
   const { open } = useImport()
+  const [themePickerOpen, setThemePickerOpen] = useState(false)
 
   return (
     <header className="sticky top-0 z-40 px-3 pt-3 sm:px-5 sm:pt-4">
@@ -100,11 +110,24 @@ export function TopNav({ showSearch }: Props) {
             </IconButton>
           </Tooltip>
 
-          <NavLink to="/settings" className="hidden md:block">
-            <IconButton label="打开设置" variant="glass" size="sm">
-              <IconSettings size={16} />
-            </IconButton>
-          </NavLink>
+          <Popover
+            open={themePickerOpen}
+            onOpenChange={setThemePickerOpen}
+            trigger={
+              <IconButton
+                label="快速选择主题"
+                variant="glass"
+                size="sm"
+              >
+                <IconPalette size={16} />
+              </IconButton>
+            }
+            side="bottom"
+            align="end"
+            className="w-80 sm:w-96"
+          >
+            <ThemePickerContent onClose={() => setThemePickerOpen(false)} />
+          </Popover>
 
           <Tooltip content="在 GitHub 上查看源码" side="bottom">
             <a
