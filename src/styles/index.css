@@ -18,11 +18,11 @@
 @custom-variant light (&:where([data-mode='light'], [data-mode='light'] *));
 
 /*
- * 把主题自定义属性注册成「带类型」的属性，才能参与 CSS transition 做平滑插值。
- * 没注册的自定义属性在切换时只会离散跳变（这就是之前过渡「不生效 / 卡一下」的根因之一）。
- * 配合 .theme-transition 的过渡声明，换主题时所有 var(--color-*) 引用随属性插值，
- * 零位图、零重绘，由合成器做颜色插值 —— 比 View Transitions 的整页快照流畅得多。
- * 不支持 @property 的旧浏览器会优雅降级为瞬间切换（不卡，只是无渐变）。
+ * 把主题自定义属性注册成「带类型」的属性。
+ * 主题切换现在走 transition.ts 的「overlay clip-path 圆形揭示」路线（单层 div、
+ * 零位图、零重绘，由合成器做 clip-path，绝对流畅）。这里保留 @property 注册作为
+ * 兜底：万一圆形揭示被禁用（如极老浏览器），自定义属性仍可参与 CSS transition 做
+ * 平滑插值降级，而不是离散跳变。不支持 @property 的环境会优雅降级为瞬间切换。
  */
 @property --color-bg { syntax: '<color>'; inherits: true; initial-value: #14100f; }
 @property --color-bg-alt { syntax: '<color>'; inherits: true; initial-value: #241715; }
@@ -499,41 +499,6 @@
   z-index: 2;
 }
 
-/* 降级路径：不支持 View Transitions 的浏览器，切换瞬间过渡。
- *
- * 只对 :root 上的 CSS 自定义属性做过渡（不逐元素）。
- * 所有主题色都通过 var(--color-*) 引用，自定义属性在 :root 上过渡时
- * 浏览器会自动把中间值级联到所有引用方，无需给每个元素挂 transition。 */
-.theme-transition {
-  transition:
-    --color-bg 300ms ease,
-    --color-bg-alt 300ms ease,
-    --color-surface 300ms ease,
-    --color-surface-alt 300ms ease,
-    --color-glass 300ms ease,
-    --color-glass-border 300ms ease,
-    --color-border 300ms ease,
-    --color-text 300ms ease,
-    --color-text-muted 300ms ease,
-    --color-text-faint 300ms ease,
-    --color-accent 300ms ease,
-    --color-accent-alt 300ms ease,
-    --color-on-accent 300ms ease,
-    --color-success 300ms ease,
-    --color-warning 300ms ease,
-    --color-danger 300ms ease,
-    --color-shadow 300ms ease,
-    --radius-sm 300ms ease,
-    --radius-md 300ms ease,
-    --radius-lg 300ms ease,
-    --radius-xl 300ms ease,
-    --radius-huge 300ms ease,
-    --glass-blur 300ms ease,
-    --scanline-opacity 300ms ease,
-    --noise-opacity 300ms ease,
-    --glow 300ms ease;
-}
-
 /* ------------------------------------------------------------------ */
 /* 无障碍                                                              */
 /* ------------------------------------------------------------------ */
@@ -552,10 +517,6 @@
   ::view-transition-old(*),
   ::view-transition-new(*) {
     animation: none !important;
-  }
-
-  .theme-transition {
-    transition: none !important;
   }
 }
 
