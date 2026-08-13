@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 
 import { Button, Spinner, useToast } from '@/components/ui'
-import { IconRefresh, IconTrash, IconUpload } from '@/components/icons'
+import { IconUpload } from '@/components/icons'
 import { GeneratedCover, invalidateCover, useGameCover } from '@/cover'
 import { coverDao, gameDao } from '@/data'
 import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/lib/storageEvents'
@@ -21,7 +21,7 @@ interface Props {
   onChanged: () => void
 }
 
-/** 封面区：预览 + 上传自定义封面 + 恢复默认。 */
+/** 封面区：预览 + 上传自定义封面。 */
 export function CoverEditor({ game, onChanged }: Props) {
   const title = displayTitle(game)
   const { url, loading } = useGameCover(game.id, title, game.coverKind)
@@ -60,25 +60,6 @@ export function CoverEditor({ game, onChanged }: Props) {
     }
   }
 
-  const resetCover = async () => {
-    setBusy(true)
-    try {
-      await coverDao.remove(game.id)
-      await gameDao.update(game.id, { coverKind: 'generated' })
-      // 让封面缓存失效，否则预览与库里仍显示已删除的旧封面
-      invalidateCover(game.id)
-      notifyLibraryChanged()
-      notifyStorageChanged()
-      onChanged()
-      toast({ variant: 'success', title: '已恢复默认封面' })
-    } catch (cause) {
-      console.error('[fc-arcade] 恢复默认封面失败', cause)
-      toast({ variant: 'error', title: '恢复默认封面失败' })
-    } finally {
-      setBusy(false)
-    }
-  }
-
   return (
     <div className="flex flex-col gap-3">
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-surface-alt)]">
@@ -103,27 +84,16 @@ export function CoverEditor({ game, onChanged }: Props) {
         当前封面：{COVER_KIND_LABEL[game.coverKind]}
       </p>
 
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          fullWidth
-          disabled={busy}
-          icon={<IconUpload size={14} />}
-          onClick={() => inputRef.current?.click()}
-        >
-          上传图片
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          disabled={busy || game.coverKind === 'generated'}
-          icon={game.coverKind === 'custom' ? <IconTrash size={14} /> : <IconRefresh size={14} />}
-          onClick={() => void resetCover()}
-        >
-          恢复默认
-        </Button>
-      </div>
+      <Button
+        variant="secondary"
+        size="sm"
+        fullWidth
+        disabled={busy}
+        icon={<IconUpload size={14} />}
+        onClick={() => inputRef.current?.click()}
+      >
+        上传图片
+      </Button>
 
       <input
         ref={inputRef}

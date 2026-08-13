@@ -190,13 +190,13 @@ export function GameDetailDialog({ game, open, onClose }: Props) {
                   detected={editor.record.detected}
                   onPatch={editor.patch}
                 />
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-[var(--color-border)] pt-3">
+                <div className="flex flex-col gap-3 border-t border-[var(--color-border)] py-4 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-xs text-[var(--color-text-faint)]">
                     {editor.editedCount > 0
                       ? `当前有 ${editor.editedCount} 个字段覆盖了识别结果`
                       : '当前完全采用识别结果'}
                   </p>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap justify-start gap-2 sm:justify-end">
                     <Button
                       variant="ghost"
                       size="sm"

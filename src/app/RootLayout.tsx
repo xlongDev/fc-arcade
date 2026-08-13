@@ -9,6 +9,7 @@ import { pageVariants, pageVariantsReduced, SPRING_SOFT } from '@/features/commo
 import { GlobalDropZone } from './GlobalDropZone'
 import { MobileTabBar } from './MobileTabBar'
 import { TopNav } from './TopNav'
+import { Footer } from './Footer'
 
 /**
  * react-router 7 的数据路由没法像 <Routes location> 那样把旧位置留住，
@@ -60,6 +61,7 @@ export function RootLayout() {
         </motion.main>
       </AnimatePresence>
 
+      {immersive ? null : <Footer />}
       {immersive ? null : <MobileTabBar />}
       <GlobalDropZone enabled={!immersive} />
     </div>

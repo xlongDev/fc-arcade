@@ -2,7 +2,7 @@ import { NavLink } from 'react-router'
 import { motion } from 'motion/react'
 
 import { Button, IconButton, Tooltip } from '@/components/ui'
-import { IconGamepad, IconMoon, IconSettings, IconSun, IconUpload } from '@/components/icons'
+import { IconGamepad, IconGitHub, IconMoon, IconSettings, IconSun, IconUpload } from '@/components/icons'
 import { useImport } from '@/features/import/ImportContext'
 import { LibrarySearchField } from '@/features/library/components/LibrarySearchField'
 import { SPRING_SOFT } from '@/features/common/motion'
@@ -105,6 +105,18 @@ export function TopNav({ showSearch }: Props) {
               <IconSettings size={16} />
             </IconButton>
           </NavLink>
+
+          <Tooltip content="在 GitHub 上查看源码" side="bottom">
+            <a
+              href="https://github.com/xlongDev/fc-arcade"
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="在 GitHub 上查看源码"
+              className="glass text-text hover:border-accent-line inline-flex size-9 shrink-0 items-center justify-center rounded-lg border transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-snap focus-ring active:scale-90"
+            >
+              <IconGitHub size={16} />
+            </a>
+          </Tooltip>
         </div>
       </nav>
     </header>
