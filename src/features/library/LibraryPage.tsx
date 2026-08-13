@@ -118,6 +118,7 @@ export function LibraryPage() {
         <LibraryToolbar
           yearBounds={yearBounds}
           selectionMode={selectionMode || selection.length > 0}
+          games={games}
           onToggleSelectionMode={() => {
             setSelectionMode((prev) => {
               if (prev) clearSelection()

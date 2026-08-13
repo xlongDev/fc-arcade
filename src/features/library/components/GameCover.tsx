@@ -27,10 +27,11 @@ export function GameCover({ game, className, showTitle = true }: Props) {
           alt={title}
           loading="lazy"
           decoding="async"
-          className="size-full object-cover [image-rendering:pixelated]"
+          fetchPriority="low"
+          className="absolute inset-0 size-full object-cover [image-rendering:pixelated]"
         />
       ) : loading && game.coverKind !== 'generated' ? (
-        <Skeleton className="size-full" />
+        <Skeleton className="absolute inset-0 size-full" />
       ) : (
         <GeneratedCover title={title} showTitle={showTitle} className="size-full" />
       )}

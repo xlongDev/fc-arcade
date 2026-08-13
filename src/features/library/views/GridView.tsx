@@ -110,7 +110,7 @@ export function GridView({
           return (
             <div
               key={row.key}
-              className="absolute top-0 left-0 w-full"
+              className="absolute top-0 left-0 w-full contain-[layout_paint]"
               style={{
                 height: `${row.size}px`,
                 transform: `translateY(${row.start - virtualizer.options.scrollMargin}px)`,

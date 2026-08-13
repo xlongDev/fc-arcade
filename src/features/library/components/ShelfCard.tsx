@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import type { KeyboardEvent } from 'react'
 
 import { displayTitle } from '@/features/common/lib/gameDisplay'
 import { SPRING } from '@/features/common/motion'
@@ -21,30 +22,23 @@ export function ShelfCard({ game, actions, animate, selected, selectionMode }: G
     else actions.onPlay(game)
   }
 
-  return (
-    <motion.article
-      layout={animate ? 'position' : false}
-      layoutId={animate ? `game-${game.id}` : undefined}
-      transition={SPRING}
-      whileHover={animate ? { y: -10, rotateZ: -1 } : undefined}
-      onClick={handleActivate}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          handleActivate()
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
-      className={cn(
-        'group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-t-2xl rounded-b-lg border-2 outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
-        selected
-          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
-          : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]',
-      )}
-    >
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleActivate()
+    }
+  }
+
+  const className = cn(
+    'group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-t-2xl rounded-b-lg border-2 outline-none transition-colors',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
+    selected
+      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
+      : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]',
+  )
+
+  const children = (
+    <>
       {/* 卡带顶部的握把凹槽 */}
       <span className="mx-auto mt-2 h-1.5 w-10 shrink-0 rounded-full bg-[var(--color-border)]" />
 
@@ -75,6 +69,38 @@ export function ShelfCard({ game, actions, animate, selected, selectionMode }: G
           <span className="h-1 flex-1 rounded-full bg-[var(--color-border)]" />
         </div>
       </div>
+    </>
+  )
+
+  if (!animate) {
+    return (
+      <article
+        className={className}
+        onClick={handleActivate}
+        onKeyDown={onKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${title}，回车开始游戏`}
+      >
+        {children}
+      </article>
+    )
+  }
+
+  return (
+    <motion.article
+      layout="position"
+      layoutId={`game-${game.id}`}
+      transition={SPRING}
+      whileHover={{ y: -10, rotateZ: -1 }}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${title}，回车开始游戏`}
+      className={className}
+    >
+      {children}
     </motion.article>
   )
 }

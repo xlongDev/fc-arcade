@@ -1,12 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import { Badge, Button, IconButton, Popover, SegmentedControl, Select, Sheet } from '@/components/ui'
 import {
-  IconCheck,
   IconCompact,
   IconFilter,
   IconGrid,
   IconList,
+  IconSelect,
+  IconSelectAll,
   IconShelf,
   IconSort,
   IconWall,
@@ -16,6 +17,7 @@ import { useLibraryStore, useSettingsStore } from '@/store'
 import { LAYOUT_LABEL, LIBRARY_LAYOUTS, SORT_LABEL } from '@/types/ui'
 import type { LibraryLayout } from '@/types/ui'
 import type { GameSortKey } from '@/types/storage'
+import type { GameView } from '@/types/game'
 
 import { FilterPanel } from './FilterPanel'
 import { LibrarySearchField } from './LibrarySearchField'
@@ -41,14 +43,25 @@ interface Props {
   yearBounds: [number, number]
   selectionMode: boolean
   onToggleSelectionMode: () => void
+  /** 当前过滤后的游戏列表，用于「全选」只选中可见项 */
+  games: readonly GameView[]
 }
 
-export function LibraryToolbar({ yearBounds, selectionMode, onToggleSelectionMode }: Props) {
+export function LibraryToolbar({ yearBounds, selectionMode, onToggleSelectionMode, games }: Props) {
   const settings = useSettingsStore((s) => s.settings)
   const setSetting = useSettingsStore((s) => s.setSetting)
   const filter = useLibraryStore((s) => s.filter)
+  const selection = useLibraryStore((s) => s.selection)
+  const setSelection = useLibraryStore((s) => s.setSelection)
   const compactViewport = useIsCompactViewport()
   const [sheetOpen, setSheetOpen] = useState(false)
+
+  const gameIds = useMemo(() => games.map((g) => g.id), [games])
+  const selectedVisibleCount = useMemo(
+    () => gameIds.filter((id) => selection.includes(id)).length,
+    [gameIds, selection],
+  )
+  const allVisibleSelected = selectedVisibleCount > 0 && selectedVisibleCount === gameIds.length
 
   const activeFilters =
     filter.categories.length + (filter.yearRange ? 1 : 0) + (filter.favoriteOnly ? 1 : 0)
@@ -117,7 +130,23 @@ export function LibraryToolbar({ yearBounds, selectionMode, onToggleSelectionMod
           active={selectionMode}
           onClick={onToggleSelectionMode}
         >
-          <IconCheck size={15} />
+          <IconSelect size={15} />
+        </IconButton>
+
+        <IconButton
+          label={allVisibleSelected ? '取消全选' : '全选'}
+          size="sm"
+          variant="ghost"
+          disabled={!selectionMode || games.length === 0}
+          onClick={() => {
+            if (allVisibleSelected) {
+              setSelection([])
+            } else {
+              setSelection(gameIds)
+            }
+          }}
+        >
+          <IconSelectAll size={15} />
         </IconButton>
       </div>
 

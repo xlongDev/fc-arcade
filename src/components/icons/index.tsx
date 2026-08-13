@@ -492,6 +492,28 @@ export function IconList(props: IconProps) {
   )
 }
 
+/** 单个勾选框：进入「选择模式」 */
+export function IconSelect(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 4h16v16H4V4Z" />
+      <path d="M8 12 11 15 17 9" />
+    </Svg>
+  )
+}
+
+/** 两个重叠勾选框：选中当前视图全部项目 */
+export function IconSelectAll(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 3h9v9H3V3Z" />
+      <path d="M5 7 7 9 11 5" />
+      <path d="M12 12h9v9h-9v-9Z" />
+      <path d="M14 16 16 18 20 14" />
+    </Svg>
+  )
+}
+
 /** 封面墙：3×3 密排 */
 export function IconWall(props: IconProps) {
   return (

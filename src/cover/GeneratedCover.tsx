@@ -241,17 +241,17 @@ function GeneratedCoverImpl({ title, seed, showTitle = true, className }: Genera
         </linearGradient>
 
         <linearGradient id={id('plate')} x1="0" y1="0" x2="0.35" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.2" />
-          <stop offset="1" stopColor="#000000" stopOpacity="0.24" />
+          <stop offset="0" stopColor="var(--fcov-plate-shine)" />
+          <stop offset="1" stopColor="var(--fcov-plate-shadow)" />
         </linearGradient>
 
         <radialGradient id={id('vignette')} cx="0.5" cy="0.44" r="0.78">
-          <stop offset="0.5" stopColor="#000000" stopOpacity="0" />
-          <stop offset="1" stopColor="#000000" stopOpacity="0.42" />
+          <stop offset="0.5" stopColor="var(--fcov-vignette)" stopOpacity="0" />
+          <stop offset="1" stopColor="var(--fcov-vignette)" stopOpacity="1" />
         </radialGradient>
 
         <pattern id={id('scan')} width="3" height="3" patternUnits="userSpaceOnUse">
-          <rect width="3" height="1" fill="#000000" opacity="0.5" />
+          <rect width="3" height="1" fill="var(--fcov-scan)" />
         </pattern>
       </defs>
 

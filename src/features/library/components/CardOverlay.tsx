@@ -25,7 +25,7 @@ function stopPropagation(event: MouseEvent, run: () => void): void {
 
 export function CardOverlay({ game, actions, compact = false }: Props) {
   return (
-    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-[var(--color-bg)]/70 opacity-0 backdrop-blur-[3px] transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-[var(--color-bg)]/85 opacity-0 transition-opacity duration-200 group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <button
         type="button"
         onClick={(event) => stopPropagation(event, () => actions.onPlay(game))}

@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import type { KeyboardEvent, MouseEvent } from 'react'
 import { motion } from 'motion/react'
 
 import { Badge, IconButton } from '@/components/ui'
@@ -30,29 +30,23 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
     else actions.onPlay(game)
   }
 
-  return (
-    <motion.div
-      layout={animate ? 'position' : false}
-      layoutId={animate ? `game-${game.id}` : undefined}
-      transition={SPRING}
-      onClick={handleActivate}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          handleActivate()
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
-      className={cn(
-        'group flex h-20 cursor-pointer items-center gap-3 rounded-2xl border px-3 outline-none transition-colors sm:gap-4 sm:px-4',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
-        selected
-          ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/8'
-          : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)]',
-      )}
-    >
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleActivate()
+    }
+  }
+
+  const className = cn(
+    'group flex h-20 cursor-pointer items-center gap-3 rounded-2xl border px-3 outline-none transition-colors sm:gap-4 sm:px-4',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
+    selected
+      ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/8'
+      : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)]',
+  )
+
+  const children = (
+    <>
       <SelectMark
         game={game}
         selected={selected}
@@ -118,6 +112,37 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
           <IconTrash size={14} />
         </IconButton>
       </div>
+    </>
+  )
+
+  if (!animate) {
+    return (
+      <div
+        className={className}
+        onClick={handleActivate}
+        onKeyDown={onKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${title}，回车开始游戏`}
+      >
+        {children}
+      </div>
+    )
+  }
+
+  return (
+    <motion.div
+      layout="position"
+      layoutId={`game-${game.id}`}
+      transition={SPRING}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${title}，回车开始游戏`}
+      className={className}
+    >
+      {children}
     </motion.div>
   )
 }

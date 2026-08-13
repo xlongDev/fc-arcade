@@ -23,10 +23,10 @@ export function SelectMark({ game, selected, visible, onToggle }: Props) {
         onToggle(game)
       }}
       className={cn(
-        'flex size-7 items-center justify-center rounded-full border-2 backdrop-blur-md transition-all',
+        'flex size-7 items-center justify-center rounded-full border-2 transition-all',
         selected
           ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-[var(--color-on-accent)]'
-          : 'border-[var(--color-glass-border)] bg-[var(--color-glass)] text-transparent hover:border-[var(--color-accent)]',
+          : 'border-[var(--color-glass-border)] bg-[var(--color-surface-alt)]/90 text-transparent hover:border-[var(--color-accent)]',
         visible || selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
       )}
     >

@@ -78,7 +78,7 @@ export function ListView({
           return (
             <div
               key={item.key}
-              className="absolute top-0 left-0 w-full"
+              className="absolute top-0 left-0 w-full contain-[layout_paint]"
               style={{
                 height: `${LIST_ROW_HEIGHT}px`,
                 transform: `translateY(${item.start - virtualizer.options.scrollMargin}px)`,

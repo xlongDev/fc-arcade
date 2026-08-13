@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import type { KeyboardEvent } from 'react'
 
 import { displayTitle } from '@/features/common/lib/gameDisplay'
 import { SPRING } from '@/features/common/motion'
@@ -32,34 +33,27 @@ export function CompactCard({
     else actions.onPlay(game)
   }
 
-  return (
-    <motion.article
-      layout={animate ? 'position' : false}
-      layoutId={animate ? `game-${game.id}` : undefined}
-      transition={SPRING}
-      whileHover={animate && !isWall ? { y: -4 } : undefined}
-      onClick={handleActivate}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          handleActivate()
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
-      className={cn(
-        'group relative flex cursor-pointer flex-col overflow-hidden outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-inset',
-        isWall
-          ? 'rounded-none'
-          : cn(
-              'rounded-2xl border bg-[var(--color-surface)]',
-              selected ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)]',
-            ),
-        isWall && selected ? 'ring-2 ring-[var(--color-accent)] ring-inset' : null,
-      )}
-    >
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleActivate()
+    }
+  }
+
+  const className = cn(
+    'group relative flex cursor-pointer flex-col overflow-hidden outline-none transition-colors',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-inset',
+    isWall
+      ? 'rounded-none'
+      : cn(
+          'rounded-2xl border bg-[var(--color-surface)]',
+          selected ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)]',
+        ),
+    isWall && selected ? 'ring-2 ring-[var(--color-accent)] ring-inset' : null,
+  )
+
+  const children = (
+    <>
       <div className="relative aspect-[4/3] w-full">
         <GameCover game={game} className="size-full" showTitle={!isWall} />
         <CardOverlay game={game} actions={actions} compact />
@@ -86,6 +80,38 @@ export function CompactCard({
       {isWall ? null : (
         <p className="truncate px-2 py-2 text-[11px] text-[var(--color-text)]">{title}</p>
       )}
+    </>
+  )
+
+  if (!animate) {
+    return (
+      <article
+        className={className}
+        onClick={handleActivate}
+        onKeyDown={onKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${title}，回车开始游戏`}
+      >
+        {children}
+      </article>
+    )
+  }
+
+  return (
+    <motion.article
+      layout="position"
+      layoutId={`game-${game.id}`}
+      transition={SPRING}
+      whileHover={isWall ? undefined : { y: -4 }}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${title}，回车开始游戏`}
+      className={className}
+    >
+      {children}
     </motion.article>
   )
 }

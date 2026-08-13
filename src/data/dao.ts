@@ -117,6 +117,10 @@ export const gameDao: GameDao = {
   count(): Promise<number> {
     return db.games.count()
   },
+
+  async clear(): Promise<void> {
+    await db.games.clear()
+  },
 }
 
 export const romDao: RomDao = {
@@ -136,6 +140,10 @@ export const romDao: RomDao = {
 
   async remove(id: string): Promise<void> {
     await db.roms.delete(id)
+  },
+
+  async clear(): Promise<void> {
+    await db.roms.clear()
   },
 }
 
@@ -160,6 +168,10 @@ export const coverDao: CoverDao = {
 
   async remove(gameId: string): Promise<void> {
     await db.covers.delete(gameId)
+  },
+
+  async clear(): Promise<void> {
+    await db.covers.clear()
   },
 }
 
@@ -197,6 +209,10 @@ export const saveStateDao: SaveStateDao = {
   async removeByGame(gameId: string): Promise<void> {
     await db.saveStates.where('gameId').equals(gameId).delete()
   },
+
+  async clear(): Promise<void> {
+    await db.saveStates.clear()
+  },
 }
 
 export const sessionDao: SessionDao = {
@@ -225,6 +241,10 @@ export const sessionDao: SessionDao = {
       })
     return total
   },
+
+  async clear(): Promise<void> {
+    await db.sessions.clear()
+  },
 }
 
 export const crcLearnDao: CrcLearnDao = {
@@ -238,5 +258,9 @@ export const crcLearnDao: CrcLearnDao = {
 
   getAll(): Promise<CrcLearnRow[]> {
     return db.crcLearn.toArray()
+  },
+
+  async clear(): Promise<void> {
+    await db.crcLearn.clear()
   },
 }

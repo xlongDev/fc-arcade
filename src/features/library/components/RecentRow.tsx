@@ -37,7 +37,6 @@ export function RecentRow({ games, onPlay }: Props) {
           >
             <GameCover
               game={game}
-              showTitle={false}
               className="h-16 w-[86px] shrink-0 rounded-xl"
             />
             <div className="min-w-0 flex-1">

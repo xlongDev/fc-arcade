@@ -17,7 +17,7 @@ export interface GridLayoutConfig {
 }
 
 export const GRID_CONFIG: Readonly<Record<'grid' | 'compact' | 'wall', GridLayoutConfig>> = {
-  grid: { minItemWidth: 210, gap: 16, coverAspect: 4 / 3, metaHeight: 78 },
+  grid: { minItemWidth: 210, gap: 16, coverAspect: 4 / 3, metaHeight: 100 },
   compact: { minItemWidth: 136, gap: 10, coverAspect: 4 / 3, metaHeight: 40 },
   wall: { minItemWidth: 150, gap: 0, coverAspect: 4 / 3, metaHeight: 0 },
 }

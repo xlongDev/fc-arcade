@@ -22,7 +22,7 @@ export function FavoriteButton({ game, onToggle, size = 16, className }: Props) 
         onToggle(game)
       }}
       className={cn(
-        'flex size-8 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass)] backdrop-blur-md transition-all',
+        'flex size-8 items-center justify-center rounded-full border border-[var(--color-glass-border)] bg-[var(--color-surface-alt)]/90 transition-all',
         game.favorite
           ? 'text-[var(--color-warning)] opacity-100'
           : 'text-[var(--color-text-muted)] opacity-0 group-focus-within:opacity-100 group-hover:opacity-100 hover:text-[var(--color-warning)]',

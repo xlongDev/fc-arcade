@@ -94,6 +94,10 @@ export function PlayerControlBar({
           <IconCamera size={18} />
         </IconButton>
 
+        <IconButton label="键位设置" variant="ghost" onClick={onOpenKeyboard}>
+          <IconKeyboard size={18} />
+        </IconButton>
+
         <div className="mx-1 hidden items-center gap-2 sm:flex">
           <IconButton
             label={muted ? '取消静音' : '静音'}
@@ -126,10 +130,6 @@ export function PlayerControlBar({
             {muted ? <IconMute size={18} /> : <IconVolume size={18} />}
           </IconButton>
         </div>
-
-        <IconButton label="键位设置" variant="ghost" onClick={onOpenKeyboard}>
-          <IconKeyboard size={18} />
-        </IconButton>
 
         {showTouchToggle ? (
           <IconButton

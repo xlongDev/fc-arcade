@@ -104,6 +104,8 @@ export interface GameDao {
   remove(id: string): Promise<void>
   removeMany(ids: string[]): Promise<void>
   count(): Promise<number>
+  /** 清空所有游戏记录 */
+  clear(): Promise<void>
 }
 
 export interface RomDao {
@@ -111,6 +113,8 @@ export interface RomDao {
   getBuffer(id: string): Promise<ArrayBuffer | undefined>
   put(row: RomRow): Promise<void>
   remove(id: string): Promise<void>
+  /** 清空所有 ROM 二进制 */
+  clear(): Promise<void>
 }
 
 export interface CoverDao {
@@ -118,6 +122,8 @@ export interface CoverDao {
   getMany(gameIds: string[]): Promise<Map<string, CoverRow>>
   put(row: CoverRow): Promise<void>
   remove(gameId: string): Promise<void>
+  /** 清空所有封面 */
+  clear(): Promise<void>
 }
 
 export interface SaveStateDao {
@@ -127,18 +133,24 @@ export interface SaveStateDao {
   put(row: SaveStateRow): Promise<void>
   remove(id: string): Promise<void>
   removeByGame(gameId: string): Promise<void>
+  /** 清空所有存档 */
+  clear(): Promise<void>
 }
 
 export interface SessionDao {
   add(row: SessionRow): Promise<void>
   recentGameIds(limit: number): Promise<string[]>
   totalMsByGame(gameId: string): Promise<number>
+  /** 清空所有游玩会话 */
+  clear(): Promise<void>
 }
 
 export interface CrcLearnDao {
   get(crc32: string): Promise<CrcLearnRow | undefined>
   put(row: CrcLearnRow): Promise<void>
   getAll(): Promise<CrcLearnRow[]>
+  /** 清空所有 CRC 自学习记录 */
+  clear(): Promise<void>
 }
 
 /* ------------------------- 导出 / 导入（备份） -------------------------- */

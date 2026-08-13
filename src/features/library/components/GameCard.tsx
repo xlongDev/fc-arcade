@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import type { KeyboardEvent } from 'react'
 
 import { Badge } from '@/components/ui'
 import { displaySubtitle, displayTitle } from '@/features/common/lib/gameDisplay'
@@ -25,37 +26,23 @@ export function GameCard({ game, actions, animate, selected, selectionMode }: Ga
     else actions.onPlay(game)
   }
 
-  return (
-    <motion.article
-      layout={animate ? 'position' : false}
-      layoutId={animate ? `game-${game.id}` : undefined}
-      transition={SPRING}
-      whileHover={animate ? { y: -6 } : undefined}
-      style={
-        animate
-          ? { rotateX: tilt.rotateX, rotateY: tilt.rotateY, transformPerspective: 900 }
-          : undefined
-      }
-      onPointerMove={tilt.onPointerMove}
-      onPointerLeave={tilt.onPointerLeave}
-      onClick={handleActivate}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault()
-          handleActivate()
-        }
-      }}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
-      className={cn(
-        'group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border bg-[var(--color-surface)] text-left outline-none transition-colors',
-        'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
-        selected
-          ? 'border-[var(--color-accent)] shadow-[0_0_0_1px_var(--color-accent)]'
-          : 'border-[var(--color-border)] hover:border-[var(--color-glass-border)]',
-      )}
-    >
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      handleActivate()
+    }
+  }
+
+  const className = cn(
+    'group relative flex cursor-pointer flex-col overflow-hidden rounded-3xl border bg-[var(--color-surface)] text-left outline-none transition-colors',
+    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
+    selected
+      ? 'border-[var(--color-accent)] shadow-[0_0_0_1px_var(--color-accent)]'
+      : 'border-[var(--color-border)] hover:border-[var(--color-glass-border)]',
+  )
+
+  const children = (
+    <>
       <div className="relative aspect-[4/3] w-full">
         <GameCover game={game} className="size-full" />
         <CardOverlay game={game} actions={actions} />
@@ -73,7 +60,7 @@ export function GameCard({ game, actions, animate, selected, selectionMode }: Ga
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-1.5 px-3.5 py-3">
+      <div className="flex h-[100px] flex-col gap-1.5 px-3.5 py-3">
         <p className="truncate text-sm font-medium text-[var(--color-text)]">{title}</p>
         {subtitle ? (
           <p className="truncate text-xs text-[var(--color-text-faint)]">{subtitle}</p>
@@ -95,6 +82,41 @@ export function GameCard({ game, actions, animate, selected, selectionMode }: Ga
           </span>
         </div>
       </div>
+    </>
+  )
+
+  if (!animate) {
+    return (
+      <article
+        className={className}
+        onClick={handleActivate}
+        onKeyDown={onKeyDown}
+        tabIndex={0}
+        role="button"
+        aria-label={`${title}，回车开始游戏`}
+      >
+        {children}
+      </article>
+    )
+  }
+
+  return (
+    <motion.article
+      layout="position"
+      layoutId={`game-${game.id}`}
+      transition={SPRING}
+      whileHover={{ y: -6 }}
+      style={{ rotateX: tilt.rotateX, rotateY: tilt.rotateY, transformPerspective: 900 }}
+      onPointerMove={tilt.onPointerMove}
+      onPointerLeave={tilt.onPointerLeave}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      tabIndex={0}
+      role="button"
+      aria-label={`${title}，回车开始游戏`}
+      className={className}
+    >
+      {children}
     </motion.article>
   )
 }

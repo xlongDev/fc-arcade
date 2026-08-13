@@ -62,14 +62,14 @@ export function ShelfView({
               const game = games[item.index]
               if (!game) return null
               return (
-                <div
-                  key={item.key}
-                  className="absolute top-0 left-0 h-full"
-                  style={{
-                    width: `${SHELF_ITEM_WIDTH}px`,
-                    transform: `translateX(${item.start}px)`,
-                  }}
-                >
+              <div
+                key={item.key}
+                className="absolute top-0 left-0 h-full contain-[layout_paint]"
+                style={{
+                  width: `${SHELF_ITEM_WIDTH}px`,
+                  transform: `translateX(${item.start}px)`,
+                }}
+              >
                   {renderCard(game)}
                 </div>
               )

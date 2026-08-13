@@ -28,6 +28,7 @@ import {
   IconKeyboard,
   IconPalette,
   IconReset,
+  IconTrash,
   IconUpload,
   IconVolume,
 } from '@/components/icons'
@@ -40,17 +41,26 @@ import { LAYOUT_LABEL, LIBRARY_LAYOUTS, SORT_LABEL } from '@/types/ui'
 import type { LibraryLayout, ScreenFilter } from '@/types/ui'
 import type { GameSortKey } from '@/types/storage'
 import type { EmulatorCore } from '@/types/emulator'
+import { ConfirmDialog } from '@/features/common/components/ConfirmDialog'
 import { KeyboardMappingPanel } from '@/features/player/components/KeyboardMappingPanel'
 import {
   BackupError,
+  clearAllData,
+  coverDao,
+  crcLearnDao,
+  db,
   downloadBackup,
+  gameDao,
   importBackup,
   previewBackup,
+  romDao,
+  saveStateDao,
+  sessionDao,
   type BackupPreview,
   type BackupProgress,
   type RestoreProgress,
 } from '@/data'
-import { notifyLibraryChanged } from '@/features/common/lib/storageEvents'
+import { notifyLibraryChanged, notifyStorageChanged } from '@/features/common/lib/storageEvents'
 
 /* ------------------------------- 通用小组件 ------------------------------- */
 
@@ -439,6 +449,8 @@ function DataSection() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [preview, setPreview] = useState<BackupPreview | null>(null)
+  const [clearing, setClearing] = useState(false)
+  const [pendingClear, setPendingClear] = useState<'saves' | 'roms' | 'records' | 'all' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const pendingFile = useRef<File | null>(null)
 
@@ -526,6 +538,107 @@ function DataSection() {
     event.target.value = ''
     if (!file) return
     void requestPreview(file)
+  }
+
+  const handleClearSaves = async () => {
+    setClearing(true)
+    try {
+      await saveStateDao.clear()
+      notifyStorageChanged()
+      toast({
+        variant: 'success',
+        title: '存档已清空',
+        description: '全部即时存档与自动存档已删除。',
+      })
+    } catch (error) {
+      toast({
+        variant: 'error',
+        title: '清空存档失败',
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setClearing(false)
+      setPendingClear(null)
+    }
+  }
+
+  const handleClearRoms = async () => {
+    setClearing(true)
+    try {
+      await romDao.clear()
+      notifyLibraryChanged()
+      toast({
+        variant: 'success',
+        title: 'ROM 已清空',
+        description: '全部 ROM 二进制已删除，游戏记录仍保留在库中。',
+      })
+    } catch (error) {
+      toast({
+        variant: 'error',
+        title: '清空 ROM 失败',
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setClearing(false)
+      setPendingClear(null)
+    }
+  }
+
+  const handleClearRecords = async () => {
+    setClearing(true)
+    try {
+      await db.transaction(
+        'rw',
+        [db.games, db.covers, db.sessions, db.crcLearn],
+        async () => {
+          await Promise.all([
+            gameDao.clear(),
+            coverDao.clear(),
+            sessionDao.clear(),
+            crcLearnDao.clear(),
+          ])
+        },
+      )
+      notifyLibraryChanged()
+      notifyStorageChanged()
+      toast({
+        variant: 'success',
+        title: '游戏记录已清空',
+        description: '全部游戏条目、封面、游玩记录与 CRC 学习记录已删除。ROM 与存档未被删除。',
+      })
+    } catch (error) {
+      toast({
+        variant: 'error',
+        title: '清空游戏记录失败',
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setClearing(false)
+      setPendingClear(null)
+    }
+  }
+
+  const handleClearAll = async () => {
+    setClearing(true)
+    try {
+      await clearAllData()
+      notifyLibraryChanged()
+      notifyStorageChanged()
+      toast({
+        variant: 'success',
+        title: '全部数据已清空',
+        description: '游戏、ROM、封面、存档、会话等所有本地数据已删除。',
+      })
+    } catch (error) {
+      toast({
+        variant: 'error',
+        title: '清空全部数据失败',
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setClearing(false)
+      setPendingClear(null)
+    }
   }
 
   const progressLabel = progress
@@ -623,6 +736,75 @@ function DataSection() {
         </p>
       </Section>
 
+      <Section
+        title="数据清理"
+        description="删除本地存储的游戏数据。建议清理前先导出备份。"
+      >
+        <Row
+          label="清空所有存档"
+          description="删除全部即时存档与自动存档，操作不可逆"
+        >
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<IconTrash size={15} />}
+            onClick={() => setPendingClear('saves')}
+            disabled={clearing}
+          >
+            清空存档
+          </Button>
+        </Row>
+
+        <Row
+          label="清空所有 ROM"
+          description="删除全部 ROM 二进制文件，保留游戏记录与封面"
+        >
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<IconTrash size={15} />}
+            onClick={() => setPendingClear('roms')}
+            disabled={clearing}
+          >
+            清空 ROM
+          </Button>
+        </Row>
+
+        <Row
+          label="清空游戏记录与封面"
+          description="删除游戏库条目、自定义/截图封面、游玩记录与 CRC 学习记录；不删 ROM 与存档"
+        >
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<IconTrash size={15} />}
+            onClick={() => setPendingClear('records')}
+            disabled={clearing}
+          >
+            清空记录
+          </Button>
+        </Row>
+
+        <Row
+          label="清空全部数据"
+          description="删除游戏、ROM、封面、存档、会话等所有本地数据，相当于恢复初始状态"
+        >
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<IconTrash size={15} />}
+            onClick={() => setPendingClear('all')}
+            disabled={clearing}
+          >
+            清空全部
+          </Button>
+        </Row>
+
+        <p className="text-xs text-faint">
+          以上操作均只影响 IndexedDB 中的数据，不会删除浏览器设置。建议重大清理前导出备份。
+        </p>
+      </Section>
+
       <Dialog
         open={previewOpen}
         onClose={() => {
@@ -700,6 +882,50 @@ function DataSection() {
           </div>
         ) : null}
       </Dialog>
+
+      <ConfirmDialog
+        open={pendingClear === 'saves'}
+        title="清空所有存档？"
+        description="这将删除全部即时存档、自动存档与存档缩略图，操作不可逆。建议先导出备份。"
+        confirmText="清空存档"
+        danger
+        loading={clearing}
+        onCancel={() => setPendingClear(null)}
+        onConfirm={() => void handleClearSaves()}
+      />
+
+      <ConfirmDialog
+        open={pendingClear === 'roms'}
+        title="清空所有 ROM？"
+        description="这将删除全部 ROM 二进制文件，但保留游戏库记录、封面与存档。被清空的 ROM 需要重新导入才能运行。"
+        confirmText="清空 ROM"
+        danger
+        loading={clearing}
+        onCancel={() => setPendingClear(null)}
+        onConfirm={() => void handleClearRoms()}
+      />
+
+      <ConfirmDialog
+        open={pendingClear === 'records'}
+        title="清空游戏记录与封面？"
+        description="这将删除全部游戏库条目、封面、游玩记录与 CRC 学习记录。ROM 二进制与存档不会被删除，但会失去对应的游戏条目。"
+        confirmText="清空记录"
+        danger
+        loading={clearing}
+        onCancel={() => setPendingClear(null)}
+        onConfirm={() => void handleClearRecords()}
+      />
+
+      <ConfirmDialog
+        open={pendingClear === 'all'}
+        title="清空全部数据？"
+        description="这将删除游戏库、ROM、封面、存档、会话等所有本地数据，应用将恢复到初始状态。此操作不可逆，请务必先备份。"
+        confirmText="清空全部"
+        danger
+        loading={clearing}
+        onCancel={() => setPendingClear(null)}
+        onConfirm={() => void handleClearAll()}
+      />
     </>
   )
 }

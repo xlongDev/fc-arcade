@@ -81,10 +81,16 @@ export function deriveCover(key: string): CoverSeed {
 
 const CJK = /[\u3400-\u9fff\uf900-\ufaff\u3040-\u30ff]/
 
+/** 提取封面中央文字时跳过的常见虚词/助词，提升识别性（「火之鸟」→「火鸟」）。 */
+const CJK_PARTICLES = new Set([
+  '之', '的', '了', '和', '与', '在', '是', '为', '于', '以', '及', '而', '或', '但',
+  '着', '过', '得', '地', '吧', '吗', '呢', '啊', '哦', '嗯', '啦', '哇', '呀', '呐',
+])
+
 /**
  * 封面中央叠印的字。
- * 中文取前两个汉字（「魂斗罗」→「魂斗」），英文取前两个单词首字母
- * （「Super Mario Bros」→「SM」），单词只有一个时取前两个字母。
+ * 中文跳过常见虚词后取前两个有效字（「火之鸟」→「火鸟」），
+ * 英文取前两个单词首字母（「Super Mario Bros」→「SM」），单词只有一个时取前两个字母。
  */
 export function coverInitials(title: string): string {
   const text = title.trim()
@@ -92,7 +98,8 @@ export function coverInitials(title: string): string {
 
   if (CJK.test(text[0])) {
     const chars = [...text].filter((c) => CJK.test(c) || /[0-9A-Za-z]/.test(c))
-    return chars.slice(0, 2).join('') || text.slice(0, 2)
+    const meaningful = chars.filter((c) => !CJK_PARTICLES.has(c))
+    return meaningful.slice(0, 2).join('') || chars.slice(0, 2).join('') || text.slice(0, 2)
   }
 
   const words = text
