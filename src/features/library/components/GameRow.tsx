@@ -37,22 +37,36 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
     }
   }
 
+  const label = selectionMode ? `选择 ${title}` : `开始游戏 ${title}`
+
   const className = cn(
-    'group flex h-20 cursor-pointer items-center gap-3 rounded-2xl border px-3 outline-none transition-colors sm:gap-4 sm:px-4',
-    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
+    'group relative flex h-20 cursor-pointer items-center gap-3 rounded-2xl border px-3 outline-none transition-colors sm:gap-4 sm:px-4',
     selected
       ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/8'
       : 'border-[var(--color-border)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-alt)]',
   )
 
+  /** 整行主操作入口：透明拉伸按钮，覆盖整行、位于操作按钮之下，避免「按钮套按钮」 */
+  const hitArea = (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      className="absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+    />
+  )
+
   const children = (
     <>
-      <SelectMark
-        game={game}
-        selected={selected}
-        visible={selectionMode}
-        onToggle={actions.onToggleSelect}
-      />
+      <div className="relative z-20">
+        <SelectMark
+          game={game}
+          selected={selected}
+          visible={selectionMode}
+          onToggle={actions.onToggleSelect}
+        />
+      </div>
 
       <GameCover
         game={game}
@@ -85,7 +99,7 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
         </span>
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5">
+      <div className="relative z-20 flex shrink-0 items-center gap-1.5">
         <FavoriteButton game={game} onToggle={actions.onToggleFavorite} />
         <IconButton
           label="开始游戏"
@@ -117,14 +131,8 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
 
   if (!animate) {
     return (
-      <div
-        className={className}
-        onClick={handleActivate}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${title}，回车开始游戏`}
-      >
+      <div role="group" className={className}>
+        {hitArea}
         {children}
       </div>
     )
@@ -135,13 +143,9 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
       layout="position"
       layoutId={`game-${game.id}`}
       transition={SPRING}
-      onClick={handleActivate}
-      onKeyDown={onKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
       className={className}
     >
+      {hitArea}
       {children}
     </motion.div>
   )

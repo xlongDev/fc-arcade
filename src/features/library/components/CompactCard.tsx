@@ -24,6 +24,7 @@ export function CompactCard({
   selected,
   selectionMode,
   variant,
+  variants,
 }: Props) {
   const title = displayTitle(game)
   const isWall = variant === 'wall'
@@ -40,9 +41,10 @@ export function CompactCard({
     }
   }
 
+  const label = selectionMode ? `选择 ${title}` : `开始游戏 ${title}`
+
   const className = cn(
     'group relative flex cursor-pointer flex-col overflow-hidden outline-none transition-colors',
-    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-inset',
     isWall
       ? 'rounded-none'
       : cn(
@@ -50,6 +52,20 @@ export function CompactCard({
           selected ? 'border-[var(--color-accent)]' : 'border-[var(--color-border)]',
         ),
     isWall && selected ? 'ring-2 ring-[var(--color-accent)] ring-inset' : null,
+  )
+
+  /** 整卡主操作入口：透明拉伸按钮，覆盖整卡、位于浮层按钮之下，避免「按钮套按钮」 */
+  const hitArea = (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      className={cn(
+        'absolute inset-0 z-10 cursor-pointer rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]',
+        isWall && 'rounded-none',
+      )}
+    />
   )
 
   const children = (
@@ -85,14 +101,8 @@ export function CompactCard({
 
   if (!animate) {
     return (
-      <article
-        className={className}
-        onClick={handleActivate}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${title}，回车开始游戏`}
-      >
+      <article role="group" className={className}>
+        {hitArea}
         {children}
       </article>
     )
@@ -103,14 +113,11 @@ export function CompactCard({
       layout="position"
       layoutId={`game-${game.id}`}
       transition={SPRING}
+      variants={variants}
       whileHover={isWall ? undefined : { y: -4 }}
-      onClick={handleActivate}
-      onKeyDown={onKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
       className={className}
     >
+      {hitArea}
       {children}
     </motion.article>
   )

@@ -24,7 +24,7 @@ export function SelectionBar({ count, busy, onFavorite, onDelete, onClear }: Pro
           transition={SPRING}
           className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-6"
         >
-          <div className="flex items-center gap-2 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass)] px-3 py-2 backdrop-blur-xl">
+          <div className="flex items-center gap-2 rounded-full border border-[var(--color-glass-border)] bg-[var(--color-glass)] px-3 py-2 backdrop-blur-[var(--glass-blur)]">
             <span className="px-2 font-pixel text-[11px] text-[var(--color-text)]">
               已选 {count} 个
             </span>

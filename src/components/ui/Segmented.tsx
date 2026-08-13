@@ -1,5 +1,5 @@
-import { useId } from 'react'
-import type { ReactNode } from 'react'
+import { useId, useRef } from 'react'
+import type { KeyboardEvent, ReactNode } from 'react'
 import { motion } from 'motion/react'
 
 import { cn } from '@/lib/cn'
@@ -36,6 +36,10 @@ const SIZE = {
  *
  * 选中态用 layoutId 共享的那块滑块 —— 切换时它会从旧位置滑到新位置，
  * 而不是原地闪。滑块 id 用 useId 保证同页多个实例互不串。
+ *
+ * 键盘行为按 WAI-ARIA radiogroup 模式：左右/上下方向键在选项间移动并直接
+ * 切换（单选组的选中随焦点走），Home/End 跳到首/末项；用 roving tabindex
+ * 让整组只占用一个 Tab 停靠点，禁用项会被方向键跳过。
  */
 export function Segmented<T extends string>({
   value,
@@ -50,11 +54,64 @@ export function Segmented<T extends string>({
   const layoutId = useId()
   const style = SIZE[size]
   const reduce = usePrefersReducedMotion()
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+
+  const usable = options.filter((option) => option.disabled !== true)
+  const currentIndex = usable.findIndex((option) => option.value === value)
+
+  const focusAndSelect = (option: SegmentedOption) => {
+    onChange(option.value as T)
+    const idx = options.indexOf(option)
+    itemRefs.current[idx]?.focus()
+  }
+
+  const move = (delta: number) => {
+    if (usable.length === 0) return
+    const from = currentIndex < 0 ? 0 : currentIndex
+    const next = usable[(from + delta + usable.length) % usable.length]
+    if (next) focusAndSelect(next)
+  }
+
+  const jump = (toEnd: boolean) => {
+    if (usable.length === 0) return
+    const target = toEnd ? usable[usable.length - 1] : usable[0]
+    if (target) focusAndSelect(target)
+  }
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    switch (event.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        event.preventDefault()
+        move(1)
+        break
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        event.preventDefault()
+        move(-1)
+        break
+      case 'Home':
+        event.preventDefault()
+        jump(false)
+        break
+      case 'End':
+        event.preventDefault()
+        jump(true)
+        break
+      default:
+        break
+    }
+  }
+
+  // roving tabindex：选中的项停靠 tabIndex=0；若 value 没落在任何可用项上
+  // （受控值异常），退化成首个可用项停靠，保证整组始终有一个 Tab 出入口
+  const tabbableValue = currentIndex >= 0 ? value : usable[0]?.value
 
   return (
     <div
       role="radiogroup"
       aria-label={ariaLabel}
+      onKeyDown={onKeyDown}
       className={cn(
         'inline-flex shrink-0 items-center border border-border bg-surface-alt/60',
         style.track,
@@ -62,16 +119,21 @@ export function Segmented<T extends string>({
         className,
       )}
     >
-      {options.map((option) => {
+      {options.map((option, index) => {
         const active = option.value === value
+        const tabbable = option.value === tabbableValue
         return (
           <button
             key={option.value}
+            ref={(el) => {
+              itemRefs.current[index] = el
+            }}
             type="button"
             role="radio"
             aria-checked={active}
             aria-label={iconOnly ? option.label : undefined}
             title={iconOnly ? option.label : undefined}
+            tabIndex={tabbable ? 0 : -1}
             disabled={option.disabled}
             onClick={() => onChange(option.value as T)}
             className={cn(

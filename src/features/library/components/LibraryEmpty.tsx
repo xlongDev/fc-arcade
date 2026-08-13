@@ -10,7 +10,11 @@ export function LibraryEmpty() {
   return (
     <div className="flex flex-col items-center gap-6 py-16">
       <EmptyState
-        icon={<IconCartridge size={48} />}
+        icon={
+          <span className="inline-flex animate-float">
+            <IconCartridge size={48} />
+          </span>
+        }
         title="游戏库还是空的"
         description="从本地导入 .nes 文件就能开始玩。所有文件只保存在你自己的浏览器里，不会上传到任何服务器。"
         action={
@@ -33,9 +37,13 @@ export function FilteredEmpty() {
   const resetFilter = useLibraryStore((s) => s.resetFilter)
 
   return (
-    <EmptyState
-      icon={<IconSearch size={44} />}
-      title="没有匹配的游戏"
+      <EmptyState
+        icon={
+          <span className="inline-flex animate-float">
+            <IconSearch size={44} />
+          </span>
+        }
+        title="没有匹配的游戏"
       description="换个关键词，或者放宽筛选条件试试。"
       action={
         <Button variant="secondary" onClick={resetFilter}>

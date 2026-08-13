@@ -17,7 +17,7 @@ interface Props {
  */
 export function GameCover({ game, className, showTitle = true }: Props) {
   const title = displayTitle(game)
-  const { url, loading } = useGameCover(game.id, title, game.coverKind)
+  const { url, loading, seed } = useGameCover(game.id, title, game.coverKind, game.rom.crc32)
 
   return (
     <div className={cn('relative overflow-hidden bg-[var(--color-surface-alt)]', className)}>
@@ -33,7 +33,7 @@ export function GameCover({ game, className, showTitle = true }: Props) {
       ) : loading && game.coverKind !== 'generated' ? (
         <Skeleton className="absolute inset-0 size-full" />
       ) : (
-        <GeneratedCover title={title} showTitle={showTitle} className="size-full" />
+        <GeneratedCover title={title} seed={seed} showTitle={showTitle} className="size-full" />
       )}
     </div>
   )

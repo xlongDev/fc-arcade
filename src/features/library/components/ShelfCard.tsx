@@ -29,12 +29,24 @@ export function ShelfCard({ game, actions, animate, selected, selectionMode }: G
     }
   }
 
+  const label = selectionMode ? `选择 ${title}` : `开始游戏 ${title}`
+
   const className = cn(
     'group relative flex h-full cursor-pointer flex-col overflow-hidden rounded-t-2xl rounded-b-lg border-2 outline-none transition-colors',
-    'focus-visible:ring-2 focus-visible:ring-[var(--color-accent)]',
     selected
       ? 'border-[var(--color-accent)] bg-[var(--color-accent)]/10'
       : 'border-[var(--color-border)] bg-[var(--color-surface-alt)]',
+  )
+
+  /** 整卡主操作入口：透明拉伸按钮，覆盖整卡、位于收藏/多选之上，避免「按钮套按钮」 */
+  const hitArea = (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={handleActivate}
+      onKeyDown={onKeyDown}
+      className="absolute inset-0 z-10 cursor-pointer rounded-t-2xl rounded-b-lg outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-accent)]"
+    />
   )
 
   const children = (
@@ -74,14 +86,8 @@ export function ShelfCard({ game, actions, animate, selected, selectionMode }: G
 
   if (!animate) {
     return (
-      <article
-        className={className}
-        onClick={handleActivate}
-        onKeyDown={onKeyDown}
-        tabIndex={0}
-        role="button"
-        aria-label={`${title}，回车开始游戏`}
-      >
+      <article role="group" className={className}>
+        {hitArea}
         {children}
       </article>
     )
@@ -93,13 +99,9 @@ export function ShelfCard({ game, actions, animate, selected, selectionMode }: G
       layoutId={`game-${game.id}`}
       transition={SPRING}
       whileHover={{ y: -10, rotateZ: -1 }}
-      onClick={handleActivate}
-      onKeyDown={onKeyDown}
-      tabIndex={0}
-      role="button"
-      aria-label={`${title}，回车开始游戏`}
       className={className}
     >
+      {hitArea}
       {children}
     </motion.article>
   )

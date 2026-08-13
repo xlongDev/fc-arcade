@@ -12,7 +12,7 @@ export function MobileTabBar() {
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden">
-      <div className="mx-auto flex max-w-md items-center justify-around gap-1 rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass)] px-2 py-2 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-md items-center justify-around gap-1 rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass)] px-2 py-2 backdrop-blur-[var(--glass-blur)]">
         <TabLink to="/" end label="游戏库" icon={<IconHome size={18} />} />
 
         <button

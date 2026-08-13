@@ -1,13 +1,26 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, LayoutGroup } from 'motion/react'
+import { AnimatePresence, LayoutGroup, motion, type Variants } from 'motion/react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 
 import type { GameView } from '@/types/game'
 
+import { SPRING_SOFT } from '@/features/common/motion'
 import { CompactCard } from '../components/CompactCard'
 import { GameCard } from '../components/GameCard'
 import { computeColumns, GRID_CONFIG } from '../layoutConfig'
 import type { GameActions } from '../types'
+
+/** 非虚拟化列表的入场编排：容器按序把子卡片逐个浮现 */
+const gridContainerVariants: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.035, delayChildren: 0.04 } },
+}
+
+/** 单张卡片的入场态。由容器驱动，虚拟化 / 关动画时不会被触发 */
+const gridItemVariants: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  show: { opacity: 1, y: 0, transition: SPRING_SOFT },
+}
 
 interface Props {
   games: GameView[]
@@ -82,6 +95,7 @@ export function GridView({
       animate,
       selected: selectedIds.has(game.id),
       selectionMode,
+      variants: gridItemVariants,
     }
     if (layout === 'grid') return <GameCard {...shared} />
     return <CompactCard {...shared} variant={layout} />
@@ -91,11 +105,16 @@ export function GridView({
     return (
       <div ref={containerRef}>
         <LayoutGroup>
-          <div style={gridStyle}>
-            <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            style={gridStyle}
+            initial="hidden"
+            animate="show"
+            variants={gridContainerVariants}
+          >
+            <AnimatePresence mode="popLayout">
               {games.map(renderItem)}
             </AnimatePresence>
-          </div>
+          </motion.div>
         </LayoutGroup>
       </div>
     )

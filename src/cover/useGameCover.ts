@@ -36,8 +36,15 @@ export interface GameCoverResult {
  * @param coverKind 游戏记录上标注的封面层级。generated 时直接短路，不查库——
  *                  库里大多数游戏都没有截图，省掉这一次 IndexedDB 往返，
  *                  列表首屏就不会闪骨架屏。
+ * @param seed      程序化封面的确定性种子。优先传 ROM 的 CRC32，
+ *                  这样用户改游戏标题时封面也不会跟着变；不传则退回 title。
  */
-export function useGameCover(gameId: string, title: string, coverKind: CoverKind): GameCoverResult {
+export function useGameCover(
+  gameId: string,
+  title: string,
+  coverKind: CoverKind,
+  seed?: string,
+): GameCoverResult {
   const stored = coverKind !== 'generated'
 
   // 封面被改写时 version 变化，触发重新取用
@@ -90,5 +97,5 @@ export function useGameCover(gameId: string, title: string, coverKind: CoverKind
     }
   }, [gameId, stored, version])
 
-  return { url: state.url, loading: state.loading, kind: state.kind, seed: title }
+  return { url: state.url, loading: state.loading, kind: state.kind, seed: seed ?? title }
 }

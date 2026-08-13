@@ -20,7 +20,7 @@ export function RouteError() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center p-6">
-      <div className="w-full max-w-lg rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass)] p-8 backdrop-blur-xl">
+      <div className="w-full max-w-lg rounded-3xl border border-[var(--color-glass-border)] bg-[var(--color-glass)] p-8 backdrop-blur-[var(--glass-blur)]">
         <p className="flex items-center gap-2 text-[var(--color-danger)]">
           <IconAlert size={20} />
           <span className="font-pixel text-sm">{title}</span>

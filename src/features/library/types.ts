@@ -1,3 +1,5 @@
+import type { Variants } from 'motion/react'
+
 import type { GameView } from '@/types/game'
 
 /** 卡片上的操作集合。各种布局共用同一套回调，避免每个视图重复声明一堆 props。 */
@@ -16,4 +18,6 @@ export interface GameItemProps {
   animate: boolean
   selected: boolean
   selectionMode: boolean
+  /** 入场编排用的 variants，由父级容器驱动。不传则卡片不响应 stagger。 */
+  variants?: Variants
 }
