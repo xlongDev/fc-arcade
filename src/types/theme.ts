@@ -18,6 +18,17 @@ export type ThemeId =
   | 'gameboy'
   | 'crt-amber'
   | 'neon-arcade'
+  | 'pacman'
+  | 'castlevania'
+  | 'synthwave'
+  | 'woodgrain'
+  | 'street-fighter'
+  | 'sonic'
+  | 'vaporwave'
+  | 'gamegear'
+  | 'souls'
+  | 'dos'
+  | 'c64'
 
 export const THEME_IDS: readonly ThemeId[] = [
   'famicom',
@@ -33,6 +44,17 @@ export const THEME_IDS: readonly ThemeId[] = [
   'gameboy',
   'crt-amber',
   'neon-arcade',
+  'pacman',
+  'castlevania',
+  'synthwave',
+  'woodgrain',
+  'street-fighter',
+  'sonic',
+  'vaporwave',
+  'gamegear',
+  'souls',
+  'dos',
+  'c64',
 ] as const
 
 export type ColorMode = 'light' | 'dark'
