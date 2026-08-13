@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { flushSync } from 'react-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { SETTINGS_STORAGE_KEY } from '@/config/defaults'
 import type { ColorMode, ColorModeSetting, ThemeContextValue, ThemeId } from '@/types/theme'
@@ -131,46 +130,51 @@ export function ThemeProvider({ children }: { children: ReactNode }): ReactEleme
     }
   }, [])
 
+  // 用 ref 追踪最新状态，让回调引用稳定且总能读到最新值
+  const stateRef = useRef({ themeId, mode, modeSetting, systemDark, reduceMotion })
+  stateRef.current = { themeId, mode, modeSetting, systemDark, reduceMotion }
+
   const setTheme = useCallback(
     (id: ThemeId, origin?: TransitionOrigin) => {
-      if (id === themeId) return
+      const { themeId: current, mode: m, reduceMotion: rm } = stateRef.current
+      if (id === current) return
       runThemeTransition(
         () => {
-          applyToDom(id, mode)
-          flushSync(() => {
-            setThemeId(id)
-          })
+          applyToDom(id, m)
+          // 不再需要 flushSync：applyToDom 已同步切换 data-theme/data-mode，
+          // CSS 变量立即生效。React setState 异步批量更新即可。
+          setThemeId(id)
         },
         origin,
-        reduceMotion,
+        rm,
       )
     },
-    [themeId, mode, reduceMotion],
+    [], // ← 空依赖：通过 stateRef 读取最新值，引用永远稳定
   )
 
   const setMode = useCallback(
     (next: ColorModeSetting, origin?: TransitionOrigin) => {
-      if (next === modeSetting) return
-      const nextMode = resolveMode(next, systemDark)
+      const { modeSetting: current, systemDark: sd, themeId: tid, reduceMotion: rm } = stateRef.current
+      if (next === current) return
+      const nextMode = resolveMode(next, sd)
       runThemeTransition(
         () => {
-          applyToDom(themeId, nextMode)
-          flushSync(() => {
-            setModeSetting(next)
-          })
+          applyToDom(tid, nextMode)
+          setModeSetting(next)
         },
         origin,
-        reduceMotion,
+        rm,
       )
     },
-    [modeSetting, systemDark, themeId, reduceMotion],
+    [], // ← 同上
   )
 
   const toggleMode = useCallback(
     (origin?: TransitionOrigin) => {
-      setMode(mode === 'dark' ? 'light' : 'dark', origin)
+      const { mode: m } = stateRef.current
+      setMode(m === 'dark' ? 'light' : 'dark', origin)
     },
-    [mode, setMode],
+    [setMode], // setMode 引用已稳定
   )
 
   const theme = THEMES[themeId]
@@ -187,6 +191,7 @@ export function ThemeProvider({ children }: { children: ReactNode }): ReactEleme
       toggleMode,
       reduceMotion,
     }),
+    // setTheme / setMode / toggleMode 引用已稳定（空依赖 useCallback），只有值变化时重建
     [themeId, mode, modeSetting, theme, setTheme, setMode, toggleMode, reduceMotion],
   )
 

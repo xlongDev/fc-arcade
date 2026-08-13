@@ -17,6 +17,40 @@
 @custom-variant dark (&:where([data-mode='dark'], [data-mode='dark'] *));
 @custom-variant light (&:where([data-mode='light'], [data-mode='light'] *));
 
+/*
+ * 把主题自定义属性注册成「带类型」的属性，才能参与 CSS transition 做平滑插值。
+ * 没注册的自定义属性在切换时只会离散跳变（这就是之前过渡「不生效 / 卡一下」的根因之一）。
+ * 配合 .theme-transition 的过渡声明，换主题时所有 var(--color-*) 引用随属性插值，
+ * 零位图、零重绘，由合成器做颜色插值 —— 比 View Transitions 的整页快照流畅得多。
+ * 不支持 @property 的旧浏览器会优雅降级为瞬间切换（不卡，只是无渐变）。
+ */
+@property --color-bg { syntax: '<color>'; inherits: true; initial-value: #14100f; }
+@property --color-bg-alt { syntax: '<color>'; inherits: true; initial-value: #241715; }
+@property --color-surface { syntax: '<color>'; inherits: true; initial-value: #201917; }
+@property --color-surface-alt { syntax: '<color>'; inherits: true; initial-value: #2c2320; }
+@property --color-glass { syntax: '<color>'; inherits: true; initial-value: rgb(255 238 226 / 7%); }
+@property --color-glass-border { syntax: '<color>'; inherits: true; initial-value: rgb(255 214 196 / 16%); }
+@property --color-border { syntax: '<color>'; inherits: true; initial-value: rgb(255 214 196 / 12%); }
+@property --color-text { syntax: '<color>'; inherits: true; initial-value: #f8f1e7; }
+@property --color-text-muted { syntax: '<color>'; inherits: true; initial-value: #c6b8a9; }
+@property --color-text-faint { syntax: '<color>'; inherits: true; initial-value: #96877a; }
+@property --color-accent { syntax: '<color>'; inherits: true; initial-value: #f0242f; }
+@property --color-accent-alt { syntax: '<color>'; inherits: true; initial-value: #f5c518; }
+@property --color-on-accent { syntax: '<color>'; inherits: true; initial-value: #1d0304; }
+@property --color-success { syntax: '<color>'; inherits: true; initial-value: #5ec26a; }
+@property --color-warning { syntax: '<color>'; inherits: true; initial-value: #f5b833; }
+@property --color-danger { syntax: '<color>'; inherits: true; initial-value: #ff5f5f; }
+@property --color-shadow { syntax: '<color>'; inherits: true; initial-value: rgb(0 0 0 / 55%); }
+@property --radius-sm { syntax: '<length>'; inherits: true; initial-value: 6px; }
+@property --radius-md { syntax: '<length>'; inherits: true; initial-value: 10px; }
+@property --radius-lg { syntax: '<length>'; inherits: true; initial-value: 16px; }
+@property --radius-xl { syntax: '<length>'; inherits: true; initial-value: 24px; }
+@property --radius-huge { syntax: '<length>'; inherits: true; initial-value: 32px; }
+@property --glass-blur { syntax: '<length>'; inherits: true; initial-value: 12px; }
+@property --scanline-opacity { syntax: '<number>'; inherits: true; initial-value: 0.06; }
+@property --noise-opacity { syntax: '<number>'; inherits: true; initial-value: 0.04; }
+@property --glow { syntax: '<number>'; inherits: true; initial-value: 0.5; }
+
 @theme {
   /* ---- 颜色 ---- */
   --color-bg: #14100f;
@@ -465,20 +499,39 @@
   z-index: 2;
 }
 
-/* 降级路径：不支持 View Transitions 的浏览器，切换瞬间给全局挂 300ms 颜色过渡 */
-.theme-transition,
-.theme-transition *,
-.theme-transition *::before,
-.theme-transition *::after {
+/* 降级路径：不支持 View Transitions 的浏览器，切换瞬间过渡。
+ *
+ * 只对 :root 上的 CSS 自定义属性做过渡（不逐元素）。
+ * 所有主题色都通过 var(--color-*) 引用，自定义属性在 :root 上过渡时
+ * 浏览器会自动把中间值级联到所有引用方，无需给每个元素挂 transition。 */
+.theme-transition {
   transition:
-    background-color 300ms ease,
-    background-image 300ms ease,
-    border-color 300ms ease,
-    color 300ms ease,
-    fill 300ms ease,
-    stroke 300ms ease,
-    box-shadow 300ms ease,
-    text-shadow 300ms ease !important;
+    --color-bg 300ms ease,
+    --color-bg-alt 300ms ease,
+    --color-surface 300ms ease,
+    --color-surface-alt 300ms ease,
+    --color-glass 300ms ease,
+    --color-glass-border 300ms ease,
+    --color-border 300ms ease,
+    --color-text 300ms ease,
+    --color-text-muted 300ms ease,
+    --color-text-faint 300ms ease,
+    --color-accent 300ms ease,
+    --color-accent-alt 300ms ease,
+    --color-on-accent 300ms ease,
+    --color-success 300ms ease,
+    --color-warning 300ms ease,
+    --color-danger 300ms ease,
+    --color-shadow 300ms ease,
+    --radius-sm 300ms ease,
+    --radius-md 300ms ease,
+    --radius-lg 300ms ease,
+    --radius-xl 300ms ease,
+    --radius-huge 300ms ease,
+    --glass-blur 300ms ease,
+    --scanline-opacity 300ms ease,
+    --noise-opacity 300ms ease,
+    --glow 300ms ease;
 }
 
 /* ------------------------------------------------------------------ */
@@ -501,10 +554,7 @@
     animation: none !important;
   }
 
-  .theme-transition,
-  .theme-transition *,
-  .theme-transition *::before,
-  .theme-transition *::after {
+  .theme-transition {
     transition: none !important;
   }
 }

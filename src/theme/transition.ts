@@ -1,10 +1,16 @@
 /**
  * 主题切换的视觉过渡。
  *
- * 首选 View Transitions API：从点击位置做一个圆形 clip-path 揭示。
- * 不支持的浏览器降级成 300ms 的全局颜色过渡（给 <html> 挂一个 class，
- * 由 index.css 里的 .theme-transition 规则接管）。
- * prefers-reduced-motion 下两者都跳过，直接换。
+ * 统一走「轻量 CSS 自定义属性过渡」：切换 <html data-theme / data-mode> 后给
+ * <html> 挂一个 class（.theme-transition），由 index.css 里注册的 @property +
+ * transition 规则把 --color-* / --radius-* / --glass-blur 等属性平滑插值。
+ *
+ * 关键点：不依赖 View Transitions API 的整页快照。VT 的圆形 clip-path 揭示会
+ * 对全页位图做「捕获 + 逐帧重光栅化」，在元素多的页面（游戏库网格）就是
+ * 「卡顿一下 + 不流畅」的根因。@property 路径零位图、零重绘，由合成器做颜色
+ * 插值，绝对流畅。
+ *
+ * prefers-reduced-motion 下跳过过渡，直接换。
  */
 
 export interface TransitionOrigin {
@@ -12,23 +18,38 @@ export interface TransitionOrigin {
   y: number
 }
 
-interface ViewTransitionLike {
-  ready: Promise<void>
-  finished: Promise<void>
-}
-
-type StartViewTransition = (callback: () => void) => ViewTransitionLike
-
 const FALLBACK_CLASS = 'theme-transition'
 const FALLBACK_MS = 300
-const REVEAL_MS = 560
 
 let fallbackTimer: number | undefined
 
-function runFallback(apply: () => void): void {
+/**
+ * 执行一次带过渡的主题变更。
+ * @param apply 真正修改 DOM / React 状态的回调（无需同步 flushSync，
+ *              data-theme/data-mode 属性已同步切换，CSS 变量立即生效）
+ * @param _origin 兼容旧签名保留（圆形揭示已弃用）
+ * @param reduceMotion 是否减弱动效
+ */
+export function runThemeTransition(
+  apply: () => void,
+  _origin?: TransitionOrigin,
+  reduceMotion = false,
+): void {
+  if (typeof document === 'undefined') {
+    apply()
+    return
+  }
+
+  if (reduceMotion) {
+    apply()
+    return
+  }
+
   const root = document.documentElement
   root.classList.add(FALLBACK_CLASS)
   apply()
+
+  // 连切时只重置一次计时器，避免 class 被提前移除打断过渡
   if (fallbackTimer !== undefined) window.clearTimeout(fallbackTimer)
   fallbackTimer = window.setTimeout(() => {
     root.classList.remove(FALLBACK_CLASS)
@@ -37,55 +58,17 @@ function runFallback(apply: () => void): void {
 }
 
 /**
- * 执行一次带过渡的主题变更。
- * @param apply 真正修改 DOM / React 状态的回调，必须是同步的
+ * 取消当前过渡（快速连切时清掉残留 class / 计时器）。
  */
-export function runThemeTransition(
-  apply: () => void,
-  origin?: TransitionOrigin,
-  reduceMotion = false,
-): void {
-  if (typeof document === 'undefined') {
-    apply()
-    return
+export function cancelActiveTransition(): void {
+  if (fallbackTimer !== undefined) {
+    window.clearTimeout(fallbackTimer)
+    fallbackTimer = undefined
   }
-
-  const doc = document as Document & { startViewTransition?: StartViewTransition }
-
-  if (reduceMotion) {
-    apply()
-    return
-  }
-
-  if (typeof doc.startViewTransition !== 'function') {
-    runFallback(apply)
-    return
-  }
-
-  const x = origin?.x ?? window.innerWidth / 2
-  const y = origin?.y ?? window.innerHeight / 2
-  const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y))
-
-  const transition = doc.startViewTransition(apply)
-
-  transition.ready
-    .then(() => {
-      document.documentElement.animate(
-        {
-          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
-        },
-        {
-          duration: REVEAL_MS,
-          easing: 'cubic-bezier(0.22, 1, 0.36, 1)',
-          pseudoElement: '::view-transition-new(root)',
-        },
-      )
-    })
-    // 过渡被打断（连点换主题）时 ready 会 reject，忽略即可
-    .catch(() => undefined)
+  document.documentElement.classList.remove(FALLBACK_CLASS)
 }
 
-/** 从鼠标/触摸事件里取切换动画的圆心 */
+/** 从鼠标/触摸事件里取切换动画的圆心（兼容旧调用，现仅保留 API） */
 export function originFromEvent(event: { clientX: number; clientY: number }): TransitionOrigin {
   return { x: event.clientX, y: event.clientY }
 }
