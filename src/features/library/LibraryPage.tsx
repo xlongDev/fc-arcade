@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 
 import { Spinner } from '@/components/ui'
 import { ConfirmDialog } from '@/features/common/components/ConfirmDialog'
@@ -30,11 +31,30 @@ import { ShelfView } from './views/ShelfView'
 const RECENT_LIMIT = 8
 const DEFAULT_YEAR_BOUNDS: [number, number] = [1983, 1996]
 
+/** 布局切换转场：旧视图淡出缩小的同时新视图淡入放大 */
+const layoutTransitionVariants = {
+  initial: { opacity: 0, scale: 0.97, y: 8 },
+  animate: { opacity: 1, scale: 1, y: 0 },
+  exit: { opacity: 0, scale: 0.97, y: -8 },
+}
+
+const layoutMotionProps = (reduce: boolean) => ({
+  initial: 'initial',
+  animate: 'animate',
+  exit: 'exit',
+  variants: layoutTransitionVariants,
+  transition: reduce
+    ? { duration: 0 }
+    : { type: 'spring' as const, stiffness: 400, damping: 32, mass: 0.8 },
+})
+
 export function LibraryPage() {
   const { games: allGames, loading: loadingAll, refresh } = useGames()
   const { games, loading } = useFilteredGames()
 
   const layout = useSettingsStore((s) => s.settings.layout)
+  const sortBy = useSettingsStore((s) => s.settings.sortBy)
+  const sortDir = useSettingsStore((s) => s.settings.sortDir)
   const filter = useLibraryStore((s) => s.filter)
   const selection = useLibraryStore((s) => s.selection)
   const toggleSelect = useLibraryStore((s) => s.toggleSelect)
@@ -133,41 +153,51 @@ export function LibraryPage() {
           {virtualized ? ' · 已启用虚拟滚动' : ''}
         </p>
 
-        {loading && games.length === 0 ? (
-          <div className="flex min-h-[30vh] items-center justify-center">
-            <Spinner />
-          </div>
-        ) : games.length === 0 ? (
-          <FilteredEmpty />
-        ) : layout === 'list' ? (
-          <ListView
-            games={games}
-            actions={gameActions}
-            selectedIds={selectedIds}
-            selectionMode={selectionMode || selection.length > 0}
-            animate={animate}
-            virtualized={virtualized}
-          />
-        ) : layout === 'shelf' ? (
-          <ShelfView
-            games={games}
-            actions={gameActions}
-            selectedIds={selectedIds}
-            selectionMode={selectionMode || selection.length > 0}
-            animate={animate}
-            virtualized={virtualized}
-          />
-        ) : (
-          <GridView
-            games={games}
-            layout={layout}
-            actions={gameActions}
-            selectedIds={selectedIds}
-            selectionMode={selectionMode || selection.length > 0}
-            animate={animate}
-            virtualized={virtualized}
-          />
-        )}
+        <AnimatePresence mode="wait">
+          {loading && games.length === 0 ? (
+            <motion.div key="loading" {...layoutMotionProps(reduceMotion)} className="flex min-h-[30vh] items-center justify-center">
+              <Spinner />
+            </motion.div>
+          ) : games.length === 0 ? (
+            <motion.div key="empty" {...layoutMotionProps(reduceMotion)}>
+              <FilteredEmpty />
+            </motion.div>
+          ) : layout === 'list' ? (
+            <motion.div key="list" {...layoutMotionProps(reduceMotion)}>
+              <ListView
+                games={games}
+                actions={gameActions}
+                selectedIds={selectedIds}
+                selectionMode={selectionMode || selection.length > 0}
+                animate={animate}
+                virtualized={virtualized}
+              />
+            </motion.div>
+          ) : layout === 'shelf' ? (
+            <motion.div key="shelf" {...layoutMotionProps(reduceMotion)}>
+              <ShelfView
+                games={games}
+                actions={gameActions}
+                selectedIds={selectedIds}
+                selectionMode={selectionMode || selection.length > 0}
+                animate={animate}
+                virtualized={virtualized}
+              />
+            </motion.div>
+          ) : (
+            <motion.div key={`${layout}-${sortBy}-${sortDir}`} {...layoutMotionProps(reduceMotion)}>
+              <GridView
+                games={games}
+                layout={layout}
+                actions={gameActions}
+                selectedIds={selectedIds}
+                selectionMode={selectionMode || selection.length > 0}
+                animate={animate}
+                virtualized={virtualized}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <SelectionBar

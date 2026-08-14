@@ -493,23 +493,24 @@ export function IconList(props: IconProps) {
 }
 
 /** 单个勾选框：进入「选择模式」 */
+/** 鼠标指针点击：进入多选模式 —— 对应 Lucide MousePointerClick */
 export function IconSelect(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M4 4h16v16H4V4Z" />
-      <path d="M8 12 11 15 17 9" />
+      {/* 指针箭头 */}
+      <path d="M4 4l7.5 16 2.5-6 6-2.5L4 4Z" />
+      {/* 点击目标圆点 */}
+      <circle cx="18" cy="18" r="3" />
     </Svg>
   )
 }
 
-/** 两个重叠勾选框：选中当前视图全部项目 */
+/** 带勾方框：全选 —— 对应 Lucide CheckSquare */
 export function IconSelectAll(props: IconProps) {
   return (
     <Svg {...props}>
-      <path d="M3 3h9v9H3V3Z" />
-      <path d="M5 7 7 9 11 5" />
-      <path d="M12 12h9v9h-9v-9Z" />
-      <path d="M14 16 16 18 20 14" />
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M7 12l3 3 6-6" strokeWidth={2.5} />
     </Svg>
   )
 }

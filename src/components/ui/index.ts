@@ -54,6 +54,9 @@ export type { SegmentedOption, SegmentedProps } from './Segmented'
 export { Select } from './Select'
 export type { SelectOption, SelectProps } from './Select'
 
+export { DropdownMenu } from './DropdownMenu'
+export type { DropdownOption, DropdownMenuProps } from './DropdownMenu'
+
 export { Sheet } from './Sheet'
 export type { SheetProps, SheetSide } from './Sheet'
 

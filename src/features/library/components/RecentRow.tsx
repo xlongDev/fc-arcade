@@ -24,7 +24,7 @@ export function RecentRow({ games, onPlay }: Props) {
         继续游玩
       </h2>
 
-      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 [scrollbar-width:thin]">
+      <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:thin]">
         {games.map((game) => (
           <motion.button
             key={game.id}

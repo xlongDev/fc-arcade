@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import { Badge, Button, IconButton, Popover, SegmentedControl, Select, Sheet } from '@/components/ui'
+import { Badge, Button, DropdownMenu, IconButton, Popover, SegmentedControl, Sheet } from '@/components/ui'
 import {
   IconCompact,
   IconFilter,
@@ -97,13 +97,13 @@ export function LibraryToolbar({ yearBounds, selectionMode, onToggleSelectionMod
       />
 
       <div className="ml-auto flex items-center gap-2">
-        <div className="w-36">
-          <Select
-            value={settings.sortBy}
-            onChange={(next: GameSortKey) => setSetting('sortBy', next)}
-            options={SORT_KEYS.map((key) => ({ value: key, label: SORT_LABEL[key] }))}
-          />
-        </div>
+        <DropdownMenu
+          value={settings.sortBy}
+          onChange={(next: GameSortKey) => setSetting('sortBy', next)}
+          options={SORT_KEYS.map((key) => ({ value: key, label: SORT_LABEL[key] }))}
+          size="sm"
+          aria-label="排序方式"
+        />
 
         <IconButton
           label={settings.sortDir === 'desc' ? '当前降序，点击改为升序' : '当前升序，点击改为降序'}

@@ -8,6 +8,7 @@
  * 其余设置项一律走 useSettingsStore().setSetting。
  */
 import { useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 
 import {
   Button,
@@ -941,6 +942,27 @@ const TABS = [
   { value: 'data', label: '数据', icon: <IconDownload size={16} /> },
 ] as const
 
+/** 设置页 tab 内容切换动画 */
+const settingsTabVariants = {
+  initial: { opacity: 0, y: 10 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -8 },
+}
+
+function SettingsTabPanel({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={settingsTabVariants}
+      transition={{ type: 'spring' as const, stiffness: 520, damping: 30, mass: 0.6 }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
 export function SettingsPage() {
   const [tab, setTab] = useState<(typeof TABS)[number]['value']>('appearance')
   const resetSettings = useSettingsStore((s) => s.resetSettings)
@@ -963,14 +985,16 @@ export function SettingsPage() {
 
       <Tabs value={tab} onChange={setTab} items={TABS} className="mb-6" />
 
-      <div className="flex flex-col gap-5">
-        {tab === 'appearance' ? <AppearanceSection /> : null}
-        {tab === 'audio' ? <AudioSection /> : null}
-        {tab === 'screen' ? <ScreenSection /> : null}
-        {tab === 'controls' ? <ControlsSection /> : null}
-        {tab === 'keyboard' ? <KeyboardSection /> : null}
-        {tab === 'data' ? <DataSection /> : null}
-      </div>
+      <AnimatePresence mode="wait">
+        <div key={tab} className="flex flex-col gap-5">
+          {tab === 'appearance' ? <SettingsTabPanel><AppearanceSection /></SettingsTabPanel> : null}
+          {tab === 'audio' ? <SettingsTabPanel><AudioSection /></SettingsTabPanel> : null}
+          {tab === 'screen' ? <SettingsTabPanel><ScreenSection /></SettingsTabPanel> : null}
+          {tab === 'controls' ? <SettingsTabPanel><ControlsSection /></SettingsTabPanel> : null}
+          {tab === 'keyboard' ? <SettingsTabPanel><KeyboardSection /></SettingsTabPanel> : null}
+          {tab === 'data' ? <SettingsTabPanel><DataSection /></SettingsTabPanel> : null}
+        </div>
+      </AnimatePresence>
     </div>
   )
 }
