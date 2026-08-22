@@ -109,6 +109,15 @@ export function EmulatorScreen({
       const entry = entries[0]
       if (!entry) return
       const rect = entry.contentRect
+      if (fullscreen) {
+        // 全屏模式：画布必须占满整个屏幕（用户期望"游戏占满上下"）。
+        // 不应用 1100 / 0.88vh 上限，box 直接取 wrapper 实际尺寸；
+        // canvas size-full 后 fceumm framebuffer 按 retroarch video_aspect_ratio
+        // 渲染填满，无 letterbox、无黑边。
+        setBox({ width: rect.width, height: rect.height })
+        return
+      }
+      // 非全屏：保留 1100 / 0.88vh 上限防止画布在桌面端过大。
       // 显式计算 boxRef 尺寸：width 撑满 max-w、height 由 aspect-ratio 推导、
       // 再受 max-h 限制。不能用 CSS aspect-ratio + max-w 同时设，会被 max-w 截断
       // 破坏比例（实测 1100×754=1.46 实际是 1.067 的 boxRef）。
@@ -133,26 +142,23 @@ export function EmulatorScreen({
     })
     observer.observe(wrapper)
     return () => observer.disconnect()
-  }, [aspectRatio])
+  }, [aspectRatio, fullscreen])
 
   const size = fitSize(box, integerScale, aspectRatio)
 
   // boxRef 显式 width/height（JS 计算，不依赖 CSS aspect-ratio）。
   const isStretch = aspectRatio === 'stretch'
   const compact = !fullscreen && !isStretch
-  // fullscreen + stretch 用 size-full（铺满父容器），其他用显式尺寸。
+  // fullscreen：boxRef 必须铺满 wrapper（=整个屏幕），让画布占满上下。
+  // stretch：同上；其他：用 ORIGINAL_RATIO 推导的 box 尺寸（保留 1100/0.88vh 上限）。
   const boxStyle: CSSProperties =
-    fullscreen
-      ? { aspectRatio: aspectRatio === 'crt' ? '4 / 3' : `${NES_WIDTH} / ${NES_HEIGHT - 16}` }
-      : isStretch
-        ? {}
-        : { width: box.width, height: box.height }
+    fullscreen || isStretch
+      ? { width: '100%', height: '100%' }
+      : { width: box.width, height: box.height }
 
-  const boxClassName = fullscreen
-    ? 'relative flex h-full items-center justify-center overflow-hidden'
-    : isStretch
-      ? 'relative flex size-full items-center justify-center overflow-hidden'
-      : 'relative flex items-center justify-center'
+  const boxClassName = fullscreen || isStretch
+    ? 'relative flex size-full items-center justify-center overflow-hidden'
+    : 'relative flex items-center justify-center'
 
   return (
     // 外层 wrapper：居中 + 给顶/底栏（absolute 浮岛）让出 padding。
