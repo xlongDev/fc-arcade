@@ -28,7 +28,7 @@ import type {
   SaveStatePayload,
   ScreenshotOptions,
 } from '@/types/emulator'
-import { EmulatorError, NES_FPS, NES_OVERSCAN_X, NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
+import { EmulatorError, NES_FPS, NES_HEIGHT, NES_OVERSCAN_X, NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH, NES_WIDTH } from '@/types/emulator'
 import type { ButtonMask, InputState, NesButton, PlayerIndex } from '@/types/input'
 import { BUTTON_BIT, EMPTY_INPUT_STATE } from '@/types/input'
 import type { Unsubscribe } from '@/types/common'
@@ -203,6 +203,15 @@ export class NostalgistAdapter implements EmulatorAdapter {
       this.#nostalgist = nostalgist
       this.#started = false
       this.#appliedMasks = [0, 0]
+      // 强制 fceumm canvas framebuffer 为 NES 去掉上下 vblank 后的 256:224 比例
+      // （按 DPR 缩放）。默认情况下 fceumm 启动时会按 canvas CSS 尺寸自动调整 framebuffer
+      // 大小，比例跟随 CSS 容器；resize() 锁回 256:224×dpr 是让 framebuffer 物理像素
+      // 与显示框 1:1 对齐的最后一关。vblank 裁剪由 retroarchCoreConfig 的
+      // fceumm_overscan_v_top/bottom 控制（见 #buildLaunchOptions）。
+      nostalgist.resize({
+        width: NES_WIDTH * devicePixelRatio,
+        height: (NES_HEIGHT - 16) * devicePixelRatio,
+      })
       this.#applyVolume()
       this.#setStatus('ready')
     } catch (error) {
@@ -402,13 +411,33 @@ export class NostalgistAdapter implements EmulatorAdapter {
         // 左右过扫描区（NES 两侧各 8px）的裁剪不放这里：
         // RetroArch 的 video_crop_overscan 经 nostalgist 传入后不生效。
         // 改为在 EmulatorScreen（CSS overflow 裁显示）和 screenshot（rescaleBlob 裁 Blob）层处理。
-        // RetroArch 自带的 OSD 提示、帧率显示和快捷菜单在嵌入场景里只会干扰
         video_font_enable: false,
         fps_show: false,
         menu_driver: 'null',
+        // 核心修复：把 fceumm 实际 framebuffer 从 256:240（含上下各 8 行 vblank）
+        // 裁成 256:224（去掉 vblank），同时按裁剪后的 geometry 算出对应的 PAR
+        // 显示比例 = (256 × 8/7) / 224 ≈ 1.3061，喂给 RetroArch。配合
+        // video_force_aspect: true，RetroArch 强制按 1.3061 渲染到 canvas（不再走
+        // fceumm 内部默认的 geometry aspect 1.219），content aspect 与 canvas aspect
+        // 一致 → 1:1 充满，无 letterbox 上下黑边。resize() 同步锁 framebuffer 物理
+        // 像素 = 256 × 224 × dpr，EmulatorScreen 的 boxRef 也按 1.3061 比例拉伸，
+        // 三层比例对齐，0 黑边。
+        video_aspect_ratio_auto: false,
+        video_aspect_ratio: String((NES_WIDTH * (8 / 7)) / (NES_HEIGHT - 16)),
+        video_force_aspect: true,
+        video_crop_overscan: true,
         audio_enable: this.#options.audio,
         audio_mute_enable: false,
         audio_volume: volumeToDb(this.#options.audio ? this.#options.volume : 0),
+      },
+      retroarchCoreConfig: {
+        // fceumm 自带的 vblank 裁剪核心选项。RetroArch 的 video_crop_overscan
+        // 在 nostalgist + fceumm 路径下不生效（之前多次实测），fceumm 自己认的
+        // fceumm_overscan_v_top/bottom 才能真正改 geometry.height（240 → 224）。
+        fceumm_overscan_v_top: '8',
+        fceumm_overscan_v_bottom: '8',
+        // 显式锁定 8:7 PAR（默认就是，但显式声明避免 fceumm 默认变更时比例漂移）
+        fceumm_aspect: '8:7 PAR',
       },
       ...(base
         ? {
