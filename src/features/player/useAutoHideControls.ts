@@ -14,10 +14,15 @@ export function useAutoHideControls(keepVisible: boolean): {
   const timerRef = useRef(0)
 
   const ping = useCallback(() => {
+    // keepVisible=true 时面板本来就该常显，启动 hide timer 反而违反意图。
+    // deps 依赖 keepVisible，所以 keepVisible 翻转时 ping 会重建；
+    // 在 shell 的 onPointerMove 等 React 事件路径里，这个判断会拦住所有冗余 timer。
     setVisible(true)
     window.clearTimeout(timerRef.current)
-    timerRef.current = window.setTimeout(() => setVisible(false), IDLE_MS)
-  }, [])
+    if (!keepVisible) {
+      timerRef.current = window.setTimeout(() => setVisible(false), IDLE_MS)
+    }
+  }, [keepVisible])
 
   useEffect(() => {
     if (keepVisible) {

@@ -53,7 +53,11 @@ export function PlayerPage() {
   const adapterRef = useRef<EmulatorAdapter | null>(null)
 
   const [touchVisible, setTouchVisible] = useState(isTouch)
-  const [savesOpen, setSavesOpen] = useState(false)
+  // 桌面端（Popover 浮层）与移动端（Sheet 全屏）是两条互不相关的路径，
+  // 不能共用一个状态 —— 否则桌面端打开 Popover 时 Sheet 也会跟着打开，
+  // 出现两个存档面板并列渲染的 bug
+  const [savesPopoverOpen, setSavesPopoverOpen] = useState(false)
+  const [savesSheetOpen, setSavesSheetOpen] = useState(false)
   const [keyboardOpen, setKeyboardOpen] = useState(false)
 
   const inputRef = usePlayerInput(touchVisible)
@@ -65,9 +69,18 @@ export function PlayerPage() {
   const busy = session.status === 'loading' || session.status === 'idle'
   // 暂停 / 出错 / 面板展开 / 虚拟手柄可见 时强制常显；
   // 虚拟手柄可见意味着用户在用触屏操作，藏起控制栏只会让 mute/全屏够不着。
-  const keepControls = !session.running || savesOpen || keyboardOpen || session.error !== null || touchVisible
+  // 非全屏时也强制常显：用户在浏览器里看着页面，需要能随时点暂停/截图/全屏，
+  // 自动淡出只会让他们找不到按钮；只有进入沉浸式全屏才让控制栏让位给游戏画面。
+  const keepControls =
+    !session.running ||
+    savesPopoverOpen ||
+    savesSheetOpen ||
+    keyboardOpen ||
+    session.error !== null ||
+    touchVisible ||
+    !fullscreen.active
   const controls = useAutoHideControls(keepControls)
-  const hideCursor = useHideCursor(session.running && !controls.visible && !savesOpen)
+  const hideCursor = useHideCursor(session.running && !controls.visible && !savesPopoverOpen && !savesSheetOpen)
 
   const exit = useCallback(() => void navigate('/'), [navigate])
 
@@ -99,7 +112,7 @@ export function PlayerPage() {
   }, [game, toast])
 
   const openSaves = useCallback(() => {
-    if (compact) setSavesOpen(true)
+    if (compact) setSavesSheetOpen(true)
   }, [compact])
 
   const handleKeyboardChange = useCallback(
@@ -218,6 +231,8 @@ export function PlayerPage() {
               fullscreenSupported={fullscreen.supported}
               reduceMotion={reduceMotion}
               savePanel={compact ? null : savePanel}
+              savesOpen={savesPopoverOpen}
+              onSavesOpenChange={setSavesPopoverOpen}
               onTogglePause={session.togglePause}
               onReset={session.reset}
               onToggleMute={() => setSetting('muted', !settings.muted)}
@@ -247,7 +262,7 @@ export function PlayerPage() {
         ) : null}
       </div>
 
-      <Sheet open={savesOpen} onClose={() => setSavesOpen(false)} title="存档 / 读档">
+      <Sheet open={savesSheetOpen} onClose={() => setSavesSheetOpen(false)} title="存档 / 读档">
         {savePanel}
       </Sheet>
 

@@ -10,6 +10,9 @@ import type { AnchorAlign, AnchorSide, Point } from './anchor'
 import { useEscapeKey } from './overlay'
 import { usePrefersReducedMotion } from './usePrefersReducedMotion'
 
+/** 浮层到视口边缘的最小间距（centerOnViewport 模式下遵守） */
+const VIEWPORT_MARGIN = 8
+
 interface TriggerProps {
   ref?: Ref<HTMLElement>
   onClick?: (event: MouseEvent<HTMLElement>) => void
@@ -27,6 +30,12 @@ export interface PopoverProps {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   className?: string
+  /**
+   * 不按 trigger 锚点定位，直接钉死在视口几何中心。
+   * 用在「面板该是全屏居中 modal，不该跟着触发器跑」的场景
+   * （比如播放器底栏存档按钮，最左侧时按它锚就把面板拉到屏幕左半边）。
+   */
+  centerOnViewport?: boolean
 }
 
 /**
@@ -41,6 +50,7 @@ export function Popover({
   open: controlledOpen,
   onOpenChange,
   className,
+  centerOnViewport = false,
 }: PopoverProps) {
   const [uncontrolled, setUncontrolled] = useState(false)
   const open = controlledOpen ?? uncontrolled
@@ -65,10 +75,20 @@ export function Popover({
       setPos(null)
       return
     }
-    const anchor = anchorRef.current
     const floating = floatRef.current
-    if (!anchor || !floating) return
+    if (!floating) return
     const box = floating.getBoundingClientRect()
+    if (centerOnViewport) {
+      const vw = window.innerWidth
+      const vh = window.innerHeight
+      setPos({
+        top: Math.max(VIEWPORT_MARGIN, vh / 2 - box.height / 2),
+        left: Math.max(VIEWPORT_MARGIN, vw / 2 - box.width / 2),
+      })
+      return
+    }
+    const anchor = anchorRef.current
+    if (!anchor) return
     setPos(
       computeAnchorPosition(
         anchor.getBoundingClientRect(),
@@ -78,7 +98,7 @@ export function Popover({
         10,
       ),
     )
-  }, [open, side, align])
+  }, [open, side, align, centerOnViewport])
 
   // 点到浮层和触发器之外就关。用 pointerdown 而不是 click，
   // 否则点击其它按钮时会先触发它的 onClick 再关闭，观感上慢半拍

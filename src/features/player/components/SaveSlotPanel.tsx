@@ -42,11 +42,11 @@ function SlotCard({ slot, row, busy, onSave, onLoad, onRemove }: SlotCardProps) 
         )}
       </div>
 
-      <div className="flex gap-1">
-        <Button variant="secondary" size="sm" fullWidth disabled={busy} onClick={onSave}>
+      <div className={cn('grid gap-1', filled ? 'grid-cols-[1fr_1fr_auto]' : 'grid-cols-2')}>
+        <Button variant="secondary" size="sm" className="w-full" disabled={busy} onClick={onSave}>
           存
         </Button>
-        <Button variant="secondary" size="sm" fullWidth disabled={busy || !filled} onClick={onLoad}>
+        <Button variant="secondary" size="sm" className="w-full" disabled={busy || !filled} onClick={onLoad}>
           读
         </Button>
         {filled ? (

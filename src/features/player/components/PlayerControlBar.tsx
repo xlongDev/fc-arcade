@@ -28,6 +28,8 @@ interface Props {
   reduceMotion: boolean
   /** 桌面端就地展开的存读档面板；传 null 表示交给外层 Sheet 处理 */
   savePanel: ReactNode
+  savesOpen: boolean
+  onSavesOpenChange: (open: boolean) => void
   onTogglePause: () => void
   onReset: () => void
   onToggleMute: () => void
@@ -58,6 +60,8 @@ export function PlayerControlBar({
   fullscreenSupported,
   reduceMotion,
   savePanel,
+  savesOpen,
+  onSavesOpenChange,
   onTogglePause,
   onReset,
   onToggleMute,
@@ -107,7 +111,14 @@ export function PlayerControlBar({
           {savePanel === null ? (
             saveTrigger
           ) : (
-            <Popover trigger={saveTrigger} side="top" align="center">
+            <Popover
+              trigger={saveTrigger}
+              side="top"
+              align="center"
+              centerOnViewport
+              open={savesOpen}
+              onOpenChange={onSavesOpenChange}
+            >
               {savePanel}
             </Popover>
           )}
