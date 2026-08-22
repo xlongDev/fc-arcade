@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { forwardRef } from 'react'
 import { motion } from 'motion/react'
 
 import { IconButton, Popover, Slider } from '@/components/ui'
@@ -50,28 +51,31 @@ const GroupDivider = () => <span className="mx-0.5 h-5 w-px bg-border/70" aria-h
  * 暂停按钮刻意降权成 ghost，不再用高饱和实心红抢画面注意力；
  * 音量折叠进 Popover，桌面移动端统一为「图标 → 上弹短滑块」。
  */
-export function PlayerControlBar({
-  running,
-  muted,
-  volume,
-  touchVisible,
-  showTouchToggle,
-  fullscreen,
-  fullscreenSupported,
-  reduceMotion,
-  savePanel,
-  savesOpen,
-  onSavesOpenChange,
-  onTogglePause,
-  onReset,
-  onToggleMute,
-  onVolumeChange,
-  onScreenshot,
-  onToggleTouch,
-  onOpenSaves,
-  onOpenKeyboard,
-  onToggleFullscreen,
-}: Props) {
+export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function PlayerControlBar(
+  {
+    running,
+    muted,
+    volume,
+    touchVisible,
+    showTouchToggle,
+    fullscreen,
+    fullscreenSupported,
+    reduceMotion,
+    savePanel,
+    savesOpen,
+    onSavesOpenChange,
+    onTogglePause,
+    onReset,
+    onToggleMute,
+    onVolumeChange,
+    onScreenshot,
+    onToggleTouch,
+    onOpenSaves,
+    onOpenKeyboard,
+    onToggleFullscreen,
+  }: Props,
+  ref,
+) {
   const saveTrigger = (
     <IconButton label="存档 / 读档" variant="ghost" onClick={onOpenSaves}>
       <IconSave size={18} />
@@ -96,6 +100,7 @@ export function PlayerControlBar({
 
   return (
     <motion.div
+      ref={ref}
       initial={reduceMotion ? false : { y: 28, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { y: 28, opacity: 0 }}
@@ -187,4 +192,4 @@ export function PlayerControlBar({
       </div>
     </motion.div>
   )
-}
+})

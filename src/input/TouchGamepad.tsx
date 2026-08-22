@@ -82,6 +82,8 @@ export interface TouchGamepadProps {
   vibration?: boolean
   /** 隐藏 Select / Start */
   hideSystemButtons?: boolean
+  /** 为底部固定控制栏预留的额外下偏移量（CSS 长度），避免虚拟手柄被控制栏遮挡 */
+  controlBarOffset?: string
   className?: string
 }
 
@@ -92,6 +94,7 @@ export function TouchGamepad({
   scale = 1,
   vibration = false,
   hideSystemButtons = false,
+  controlBarOffset = '0px',
   className,
 }: TouchGamepadProps): ReactNode {
   // 回调可能每次渲染都换引用，用 ref 兜住，避免所有子按钮跟着重建
@@ -128,11 +131,15 @@ export function TouchGamepad({
     <div
       role="group"
       aria-label="虚拟手柄"
-      style={style}
+      style={{
+        ...style,
+        bottom: controlBarOffset,
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
+      }}
       className={cn(
-        'pointer-events-none fixed inset-x-0 bottom-0 z-30 select-none',
+        'pointer-events-none fixed inset-x-0 z-30 select-none',
         'flex items-end justify-between gap-2',
-        'px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+        'px-3',
         className,
       )}
     >

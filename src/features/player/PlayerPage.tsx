@@ -51,6 +51,9 @@ export function PlayerPage() {
 
   const shellRef = useRef<HTMLDivElement>(null)
   const adapterRef = useRef<EmulatorAdapter | null>(null)
+  const controlBarRef = useRef<HTMLDivElement>(null)
+  const controlBarRO = useRef<ResizeObserver | null>(null)
+  const [controlBarHeight, setControlBarHeight] = useState(0)
 
   const [touchVisible, setTouchVisible] = useState(isTouch)
   // 桌面端（Popover 浮层）与移动端（Sheet 全屏）是两条互不相关的路径，
@@ -80,6 +83,26 @@ export function PlayerPage() {
     touchVisible ||
     !fullscreen.active
   const controls = useAutoHideControls(keepControls)
+
+  // 控制栏经由 Framer Motion 的 motion.div 渲染，其 ref 会在首次 passive effect 时尚未挂载
+  // （Framer 在 commit 之后才把 DOM 节点交给 ref），导致用 useEffect 测量时 ref 恒为 null、
+  // 手柄偏移一直走 112px 兜底值。改用回调 ref：节点在 commit 阶段一挂载 React 就回调，
+  // 此时读取 offsetHeight 会强制同步布局，能拿到真实高度，并接管 ResizeObserver。
+  const handleControlBarRef = useCallback((node: HTMLDivElement | null) => {
+    controlBarRef.current = node
+    controlBarRO.current?.disconnect()
+    controlBarRO.current = null
+    if (!node) return
+    const measure = () => {
+      const computed = getComputedStyle(node)
+      const bottomPadding = parseFloat(computed.paddingBottom) || 0
+      setControlBarHeight(Math.max(0, node.offsetHeight - bottomPadding))
+    }
+    measure()
+    controlBarRO.current = new ResizeObserver(measure)
+    controlBarRO.current.observe(node)
+  }, [])
+
   const hideCursor = useHideCursor(session.running && !controls.visible && !savesPopoverOpen && !savesSheetOpen)
 
   const exit = useCallback(() => void navigate('/'), [navigate])
@@ -221,6 +244,7 @@ export function PlayerPage() {
 
           {controls.visible ? (
             <PlayerControlBar
+              ref={handleControlBarRef}
               key="bottom"
               running={session.running}
               muted={settings.muted}
@@ -257,6 +281,7 @@ export function PlayerPage() {
             opacity={settings.touchOpacity}
             scale={settings.touchScale}
             vibration={settings.vibration}
+            controlBarOffset={`${controlBarHeight || 112}px`}
             className="pointer-events-none absolute inset-0 z-10 [&_*]:pointer-events-auto"
           />
         ) : null}
