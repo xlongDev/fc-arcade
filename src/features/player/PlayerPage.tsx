@@ -63,7 +63,9 @@ export function PlayerPage() {
   const fullscreen = useFullscreen(shellRef)
 
   const busy = session.status === 'loading' || session.status === 'idle'
-  const keepControls = !session.running || savesOpen || keyboardOpen || session.error !== null
+  // 暂停 / 出错 / 面板展开 / 虚拟手柄可见 时强制常显；
+  // 虚拟手柄可见意味着用户在用触屏操作，藏起控制栏只会让 mute/全屏够不着。
+  const keepControls = !session.running || savesOpen || keyboardOpen || session.error !== null || touchVisible
   const controls = useAutoHideControls(keepControls)
   const hideCursor = useHideCursor(session.running && !controls.visible && !savesOpen)
 
@@ -161,7 +163,7 @@ export function PlayerPage() {
     <div
       ref={shellRef}
       className={cn(
-        'fixed inset-0 z-40 flex flex-col bg-black',
+        'fixed inset-0 z-40 flex flex-col bg-bg',
         hideCursor && 'cursor-none',
       )}
       onPointerMove={controls.ping}
@@ -171,6 +173,7 @@ export function PlayerPage() {
           canvasRef={session.canvasRef}
           filter={settings.screenFilter}
           integerScale={settings.integerScale}
+          aspectRatio={settings.aspectRatio}
           dimmed={!session.running && session.error === null && !busy}
           fullscreen={fullscreen.active}
           onActivate={() => {
@@ -198,11 +201,8 @@ export function PlayerPage() {
               fps={session.stats.fps}
               showFps={settings.showFps}
               core={session.activeCore ?? game.preferredCore ?? settings.defaultCore}
-              fullscreen={fullscreen.active}
-              fullscreenSupported={fullscreen.supported}
               reduceMotion={reduceMotion}
               onExit={exit}
-              onToggleFullscreen={fullscreen.toggle}
             />
           ) : null}
 
@@ -214,6 +214,8 @@ export function PlayerPage() {
               volume={settings.volume}
               touchVisible={touchVisible}
               showTouchToggle={isTouch}
+              fullscreen={fullscreen.active}
+              fullscreenSupported={fullscreen.supported}
               reduceMotion={reduceMotion}
               savePanel={compact ? null : savePanel}
               onTogglePause={session.togglePause}
@@ -227,6 +229,7 @@ export function PlayerPage() {
               onToggleTouch={() => setTouchVisible((v) => !v)}
               onOpenSaves={openSaves}
               onOpenKeyboard={() => setKeyboardOpen(true)}
+              onToggleFullscreen={fullscreen.toggle}
             />
           ) : null}
         </AnimatePresence>

@@ -33,8 +33,8 @@ import { NES_BUTTONS } from '@/types/input'
 import type { ColorModeSetting, ThemeId } from '@/types/theme'
 import { THEME_IDS } from '@/types/theme'
 import type { GameSortKey } from '@/types/storage'
-import type { AppSettings, LibraryLayout, ScreenFilter } from '@/types/ui'
-import { LIBRARY_LAYOUTS } from '@/types/ui'
+import type { AppSettings, AspectRatio, LibraryLayout, ScreenFilter } from '@/types/ui'
+import { ASPECT_RATIOS, LIBRARY_LAYOUTS } from '@/types/ui'
 
 export { DEFAULT_SETTINGS } from '@/config/defaults'
 
@@ -190,6 +190,7 @@ export function mergeSettings(persisted: unknown, base: AppSettings = DEFAULT_SE
     defaultCore: oneOf<EmulatorCore>(persisted.defaultCore, CORES, base.defaultCore),
     screenFilter: oneOf<ScreenFilter>(persisted.screenFilter, SCREEN_FILTERS, base.screenFilter),
     integerScale: bool(persisted.integerScale, base.integerScale),
+    aspectRatio: oneOf<AspectRatio>(persisted.aspectRatio, ASPECT_RATIOS, base.aspectRatio),
     showFps: bool(persisted.showFps, base.showFps),
     autoScreenshotAfterSec: num(persisted.autoScreenshotAfterSec, base.autoScreenshotAfterSec, 0, 600),
     autoSaveIntervalSec: num(persisted.autoSaveIntervalSec, base.autoSaveIntervalSec, 0, 3600),

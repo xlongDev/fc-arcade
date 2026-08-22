@@ -38,8 +38,14 @@ import { useSettingsStore } from '@/store'
 import { DEFAULT_INPUT_MAPS } from '@/store'
 import { BUTTON_LABEL, NES_BUTTONS } from '@/types/input'
 import type { NesButton, TurboConfig } from '@/types/input'
-import { LAYOUT_LABEL, LIBRARY_LAYOUTS, SORT_LABEL } from '@/types/ui'
-import type { LibraryLayout, ScreenFilter } from '@/types/ui'
+import {
+  ASPECT_RATIO_LABEL,
+  ASPECT_RATIOS,
+  LAYOUT_LABEL,
+  LIBRARY_LAYOUTS,
+  SORT_LABEL,
+} from '@/types/ui'
+import type { AspectRatio, LibraryLayout, ScreenFilter } from '@/types/ui'
 import type { GameSortKey } from '@/types/storage'
 import type { EmulatorCore } from '@/types/emulator'
 import { ConfirmDialog } from '@/features/common/components/ConfirmDialog'
@@ -235,6 +241,7 @@ function AudioSection() {
 function ScreenSection() {
   const screenFilter = useSettingsStore((s) => s.settings.screenFilter)
   const integerScale = useSettingsStore((s) => s.settings.integerScale)
+  const aspectRatio = useSettingsStore((s) => s.settings.aspectRatio)
   const showFps = useSettingsStore((s) => s.settings.showFps)
   const autoScreenshotAfterSec = useSettingsStore((s) => s.settings.autoScreenshotAfterSec)
   const autoSaveIntervalSec = useSettingsStore((s) => s.settings.autoSaveIntervalSec)
@@ -262,6 +269,14 @@ function ScreenSection() {
 
       <Row label="整数倍缩放" description="保持像素锐利，避免画面被拉伸糊掉">
         <Switch checked={integerScale} onChange={(checked) => setSetting('integerScale', checked)} />
+      </Row>
+
+      <Row label="画面比例" description="不同比例会改变 NES 画面的宽高显示方式">
+        <Segmented
+          value={aspectRatio}
+          onChange={(next) => setSetting('aspectRatio', next as AspectRatio)}
+          options={ASPECT_RATIOS.map((value) => ({ value, label: ASPECT_RATIO_LABEL[value] }))}
+        />
       </Row>
 
       <Row label="显示帧率">

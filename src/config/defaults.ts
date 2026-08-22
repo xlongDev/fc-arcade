@@ -71,6 +71,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   defaultCore: 'nostalgist',
   screenFilter: 'scanline',
   integerScale: false,
+  aspectRatio: 'original',
   showFps: false,
   autoScreenshotAfterSec: 10,
   autoSaveIntervalSec: 60,

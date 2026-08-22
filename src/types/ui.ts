@@ -51,6 +51,16 @@ export const EMPTY_FILTER: LibraryFilter = {
 
 export type ScreenFilter = 'none' | 'scanline' | 'crt' | 'lcd'
 
+export type AspectRatio = 'original' | 'crt' | 'stretch'
+
+export const ASPECT_RATIOS: readonly AspectRatio[] = ['original', 'crt', 'stretch'] as const
+
+export const ASPECT_RATIO_LABEL: Readonly<Record<AspectRatio, string>> = {
+  original: '原始 (256:240)',
+  crt: '4:3 (CRT)',
+  stretch: '铺满',
+}
+
 export interface AppSettings {
   /* 外观 */
   themeId: ThemeId
@@ -68,6 +78,7 @@ export interface AppSettings {
   defaultCore: EmulatorCore
   screenFilter: ScreenFilter
   integerScale: boolean
+  aspectRatio: AspectRatio
   showFps: boolean
   /** 运行满 N 秒后自动截图当封面，0 = 关闭 */
   autoScreenshotAfterSec: number
