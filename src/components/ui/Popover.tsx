@@ -91,7 +91,16 @@ export function Popover({
       if (anchorRef.current?.contains(target)) return
       setOpen(false)
     }
-    const onScroll = () => setOpen(false)
+    // 浮层本身的内容滚动不应关闭（10 个存档槽位超出视口时要能滚），
+    // 只对浮层/触发器之外的滚动（祖先容器、窗口主滚动条）响应。
+    const onScroll = (event: Event) => {
+      const target = event.target
+      if (target instanceof Node) {
+        if (floatRef.current?.contains(target)) return
+        if (anchorRef.current?.contains(target)) return
+      }
+      setOpen(false)
+    }
 
     document.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('scroll', onScroll, true)

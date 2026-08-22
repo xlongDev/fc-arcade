@@ -46,7 +46,7 @@ function SlotCard({ slot, row, busy, onSave, onLoad, onRemove }: SlotCardProps) 
         <Button variant="secondary" size="sm" fullWidth disabled={busy} onClick={onSave}>
           存
         </Button>
-        <Button variant="ghost" size="sm" fullWidth disabled={busy || !filled} onClick={onLoad}>
+        <Button variant="secondary" size="sm" fullWidth disabled={busy || !filled} onClick={onLoad}>
           读
         </Button>
         {filled ? (
