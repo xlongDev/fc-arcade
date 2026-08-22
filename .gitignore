@@ -16,3 +16,7 @@ dist-ssr
 *.tsbuildinfo
 coverage
 .cache
+
+# 一次性审计/走查文档（本地保留，不进仓库）
+ui-audit.md
+*.audit.md
