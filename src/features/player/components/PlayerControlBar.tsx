@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { IconButton, Popover, Slider } from '@/components/ui'
 import {
   IconCamera,
+  IconEdit,
   IconFullscreen,
   IconFullscreenExit,
   IconGamepad,
@@ -13,6 +14,7 @@ import {
   IconPause,
   IconPlay,
   IconRefresh,
+  IconReset,
   IconSave,
   IconVolume,
 } from '@/components/icons'
@@ -40,6 +42,12 @@ interface Props {
   onOpenSaves: () => void
   onOpenKeyboard: () => void
   onToggleFullscreen: () => void
+  /** 是否处于手柄布局编辑模式 */
+  layoutEdit?: boolean
+  /** 进入 / 退出布局编辑 */
+  onToggleLayoutEdit?: () => void
+  /** 把手柄布局重置为内置默认 */
+  onResetLayout?: () => void
 }
 
 /** 组内分隔线：极淡的竖线，让功能分区一眼可辨 */
@@ -73,6 +81,9 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
     onOpenSaves,
     onOpenKeyboard,
     onToggleFullscreen,
+    layoutEdit = false,
+    onToggleLayoutEdit,
+    onResetLayout,
   }: Props,
   ref,
 ) {
@@ -107,9 +118,12 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
       transition={reduceMotion ? { duration: 0 } : SPRING}
       className="pointer-events-auto absolute inset-x-0 bottom-0 z-20 flex justify-center px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-10"
     >
-      <div className="glass flex items-center gap-1 rounded-full px-2 py-1.5">
+      <div
+        className="glass flex max-w-full items-center gap-0.5 overflow-x-auto rounded-full px-1.5 py-1 sm:gap-1 sm:px-2 sm:py-1.5 [&::-webkit-scrollbar]:[display:none]"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         {/* 左：系统操作 */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <IconButton label="重置游戏" variant="ghost" onClick={onReset}>
             <IconRefresh size={18} />
           </IconButton>
@@ -132,7 +146,7 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
         <GroupDivider />
 
         {/* 中：主控（暂停 / 继续），降权但作为视觉重心略大 */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <IconButton
             label={running ? '暂停' : '继续'}
             variant="ghost"
@@ -146,13 +160,38 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
         <GroupDivider />
 
         {/* 右：媒体与系统 */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <IconButton label="截图" variant="ghost" onClick={onScreenshot}>
             <IconCamera size={18} />
           </IconButton>
           <IconButton label="键位设置" variant="ghost" onClick={onOpenKeyboard}>
             <IconKeyboard size={18} />
           </IconButton>
+          {showTouchToggle ? (
+            <IconButton
+              label={touchVisible ? '隐藏虚拟手柄' : '显示虚拟手柄'}
+              variant="ghost"
+              active={touchVisible}
+              onClick={onToggleTouch}
+            >
+              <IconGamepad size={18} />
+            </IconButton>
+          ) : null}
+          {showTouchToggle && touchVisible ? (
+            <IconButton
+              label={layoutEdit ? '完成布局编辑' : '编辑布局'}
+              variant="ghost"
+              active={layoutEdit}
+              onClick={onToggleLayoutEdit}
+            >
+              <IconEdit size={18} />
+            </IconButton>
+          ) : null}
+          {layoutEdit ? (
+            <IconButton label="重置手柄布局" variant="ghost" onClick={onResetLayout}>
+              <IconReset size={18} />
+            </IconButton>
+          ) : null}
           <Popover trigger={volumeTrigger} side="top" align="center" className="p-2.5">
             <div className="flex w-44 items-center gap-3">
               <IconButton
@@ -178,16 +217,6 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
             </div>
           </Popover>
           {fullscreenButton}
-          {showTouchToggle ? (
-            <IconButton
-              label={touchVisible ? '隐藏虚拟手柄' : '显示虚拟手柄'}
-              variant="ghost"
-              active={touchVisible}
-              onClick={onToggleTouch}
-            >
-              <IconGamepad size={18} />
-            </IconButton>
-          ) : null}
         </div>
       </div>
     </motion.div>

@@ -33,7 +33,15 @@ import { NES_BUTTONS } from '@/types/input'
 import type { ColorModeSetting, ThemeId } from '@/types/theme'
 import { THEME_IDS } from '@/types/theme'
 import type { GameSortKey } from '@/types/storage'
-import type { AppSettings, AspectRatio, LibraryLayout, ScreenFilter } from '@/types/ui'
+import type {
+  AppSettings,
+  AspectRatio,
+  LibraryLayout,
+  PadId,
+  PadPos,
+  ScreenFilter,
+  TouchLayout,
+} from '@/types/ui'
 import { ASPECT_RATIOS, LIBRARY_LAYOUTS } from '@/types/ui'
 
 export { DEFAULT_SETTINGS } from '@/config/defaults'
@@ -99,6 +107,30 @@ function numberList(value: unknown, fallback: readonly number[]): number[] {
 function buttonList(value: unknown, fallback: readonly NesButton[]): NesButton[] {
   if (!Array.isArray(value)) return [...fallback]
   return value.filter((v): v is NesButton => (NES_BUTTONS as readonly unknown[]).includes(v))
+}
+
+/* --------------------------- 触屏布局净化 --------------------------- */
+
+const PAD_IDS: readonly PadId[] = ['dpad', 'a', 'b', 'select', 'start']
+
+function sanitizePos(value: unknown): PadPos | null {
+  if (!isRecord(value)) return null
+  const x = num(value.x, NaN, 0, 1)
+  const y = num(value.y, NaN, 0, 1)
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null
+  return { x, y }
+}
+
+function sanitizeTouchLayout(value: unknown, fallback: TouchLayout | null): TouchLayout | null {
+  if (value === null) return null
+  if (!isRecord(value)) return fallback
+  const resolved = {} as TouchLayout
+  for (const id of PAD_IDS) {
+    const pos = sanitizePos(value[id])
+    if (!pos) return fallback
+    resolved[id] = pos
+  }
+  return resolved
 }
 
 /* ------------------------- 嵌套结构的逐字段合并 ------------------------- */
@@ -205,6 +237,7 @@ export function mergeSettings(persisted: unknown, base: AppSettings = DEFAULT_SE
     vibration: bool(persisted.vibration, base.vibration),
     touchOpacity: num(persisted.touchOpacity, base.touchOpacity, 0.2, 1),
     touchScale: num(persisted.touchScale, base.touchScale, 0.7, 1.4),
+    touchLayout: sanitizeTouchLayout(persisted.touchLayout, base.touchLayout),
   }
 }
 

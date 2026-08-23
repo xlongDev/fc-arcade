@@ -11,10 +11,16 @@
  *
  * 所有尺寸走 --pad-scale 变量（对应 AppSettings.touchScale），
  * 颜色只用 token（bg-glass / text-text / bg-accent…），换主题时才能跟着变。
+ *
+ * 布局可自定义：每个部件（DPad / A / B / SELECT / START）在「编辑模式」下可拖拽，
+ * 落点以归一化坐标（0~1，相对可拖拽区域左上角）存入 AppSettings.touchLayout；
+ * 不自定义时回退到 DEFAULT_TOUCH_LAYOUT。非编辑模式行为完全不变。
  */
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { NesButton } from '@/types/input'
+import type { PadId, PadPos, TouchLayout } from '@/types/ui'
+import { DEFAULT_TOUCH_LAYOUT } from '@/config/defaults'
 import { clamp } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
@@ -41,6 +47,9 @@ const DPAD_DEADZONE_RATIO = 0.24
 
 /** 触摸反馈的震动时长（毫秒），短到只有「咔」一下 */
 const HAPTIC_MS = 8
+
+/** 拖拽时部件中心离可拖拽区域边缘的最小留白（px），避免拖出屏幕外 */
+const DRAG_MARGIN = 12
 
 function vibrate(enabled: boolean, ms: number): void {
   if (!enabled || typeof navigator === 'undefined') return
@@ -84,6 +93,12 @@ export interface TouchGamepadProps {
   hideSystemButtons?: boolean
   /** 为底部固定控制栏预留的额外下偏移量（CSS 长度），避免虚拟手柄被控制栏遮挡 */
   controlBarOffset?: string
+  /** 编辑模式：开启后各部件可拖拽，且暂停实际按键 */
+  editMode?: boolean
+  /** 自定义布局（归一化坐标）；null / 缺省时使用内置默认 */
+  layout?: TouchLayout | null
+  /** 拖拽落点提交（归一化坐标） */
+  onLayoutChange?: (id: PadId, pos: PadPos) => void
   className?: string
 }
 
@@ -95,6 +110,9 @@ export function TouchGamepad({
   vibration = false,
   hideSystemButtons = false,
   controlBarOffset = '0px',
+  editMode = false,
+  layout = null,
+  onLayoutChange,
   className,
 }: TouchGamepadProps): ReactNode {
   // 回调可能每次渲染都换引用，用 ref 兜住，避免所有子按钮跟着重建
@@ -127,34 +145,177 @@ export function TouchGamepad({
     [scale, opacity],
   )
 
+  // 可拖拽区域（根容器）的尺寸，用来把归一化坐标换算成 px，并在拖拽时夹在边界内。
+  // 用 useLayoutEffect 在首帧前量一次避免初始闪烁，ResizeObserver 跟进后续变化。
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [rootSize, setRootSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 })
+  useLayoutEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    const measure = () => {
+      const rect = el.getBoundingClientRect()
+      setRootSize({ w: rect.width, h: rect.height })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  const layoutResolved = layout ?? DEFAULT_TOUCH_LAYOUT
+  const ORDER: readonly PadId[] = ['dpad', 'a', 'b', 'select', 'start']
+  const visible = hideSystemButtons
+    ? ORDER.filter((id) => id !== 'select' && id !== 'start')
+    : ORDER
+
   return (
     <div
+      ref={rootRef}
       role="group"
       aria-label="虚拟手柄"
       style={{
         ...style,
+        position: 'absolute',
+        inset: 0,
         bottom: controlBarOffset,
         paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))',
       }}
-      className={cn(
-        'pointer-events-none fixed inset-x-0 z-30 select-none',
-        'flex items-end justify-between gap-2',
-        'px-3',
-        className,
-      )}
+      className={cn('pointer-events-none z-30 select-none', className)}
     >
-      <DPad onChange={emit} vibration={vibration} />
+      {visible.map((id) => (
+        <DraggableCluster
+          key={id}
+          id={id}
+          pos={layoutResolved[id]}
+          rootSize={rootSize}
+          editMode={editMode}
+          onCommit={onLayoutChange}
+        >
+          {renderPad(id, emit, vibration)}
+        </DraggableCluster>
+      ))}
+    </div>
+  )
+}
 
-      <div className="flex flex-col items-center gap-2">
-        {!hideSystemButtons && (
-          <div className="pointer-events-auto flex gap-2">
-            <SystemButton button="select" label="SELECT" onChange={emit} vibration={vibration} />
-            <SystemButton button="start" label="START" onChange={emit} vibration={vibration} />
-          </div>
-        )}
+/** 按部件标识渲染对应的手柄控件 */
+function renderPad(
+  id: PadId,
+  emit: (button: NesButton, pressed: boolean) => void,
+  vibration: boolean,
+): ReactNode {
+  switch (id) {
+    case 'dpad':
+      return <DPad onChange={emit} vibration={vibration} />
+    case 'a':
+      return <RoundButton button="a" label="A" onChange={emit} vibration={vibration} />
+    case 'b':
+      return <RoundButton button="b" label="B" onChange={emit} vibration={vibration} />
+    case 'select':
+      return <SystemButton button="select" label="SELECT" onChange={emit} vibration={vibration} />
+    case 'start':
+      return <SystemButton button="start" label="START" onChange={emit} vibration={vibration} />
+  }
+}
+
+/* --------------------------- 可拖拽容器 ----------------------------- */
+
+interface DraggableClusterProps {
+  id: PadId
+  /** 归一化坐标（0~1） */
+  pos: PadPos
+  /** 根容器当前尺寸（px），用于 px ↔ 归一化换算与边界夹取 */
+  rootSize: { w: number; h: number }
+  /** 是否处于编辑模式 */
+  editMode: boolean
+  /** 拖拽结束提交归一化坐标 */
+  onCommit?: (id: PadId, pos: PadPos) => void
+  children: ReactNode
+}
+
+function DraggableCluster({
+  id,
+  pos,
+  rootSize,
+  editMode,
+  onCommit,
+  children,
+}: DraggableClusterProps): ReactNode {
+  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null)
+  const grab = useRef<{ dx: number; dy: number }>({ dx: 0, dy: 0 })
+
+  // 静止时由归一化坐标换算成 px；拖拽中直接用 px，避免每帧被 pos 拉回。
+  const clampPx = useCallback(
+    (x: number, y: number) => ({
+      x: clamp(x, DRAG_MARGIN, Math.max(DRAG_MARGIN, rootSize.w - DRAG_MARGIN)),
+      y: clamp(y, DRAG_MARGIN, Math.max(DRAG_MARGIN, rootSize.h - DRAG_MARGIN)),
+    }),
+    [rootSize.w, rootSize.h],
+  )
+  // 静止中心：归一化坐标 × 根尺寸。内联计算，避免把「每帧新建的对象」放进 hook 依赖。
+  const current = drag ?? { x: pos.x * rootSize.w, y: pos.y * rootSize.h }
+
+  const handleDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!editMode) return
+      event.preventDefault()
+      event.stopPropagation()
+      const center = drag ?? { x: pos.x * rootSize.w, y: pos.y * rootSize.h }
+      grab.current = { dx: event.clientX - center.x, dy: event.clientY - center.y }
+      event.currentTarget.setPointerCapture(event.pointerId)
+      setDrag(center)
+    },
+    [editMode, drag, pos, rootSize.w, rootSize.h],
+  )
+
+  const handleMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!drag) return
+      setDrag(clampPx(event.clientX - grab.current.dx, event.clientY - grab.current.dy))
+    },
+    [drag, clampPx],
+  )
+
+  const handleUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!drag) return
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+      const clamped = clampPx(drag.x, drag.y)
+      onCommit?.(id, {
+        x: clamp(clamped.x / rootSize.w, 0, 1),
+        y: clamp(clamped.y / rootSize.h, 0, 1),
+      })
+      setDrag(null)
+    },
+    [drag, clampPx, rootSize.w, rootSize.h, id, onCommit],
+  )
+
+  return (
+    <div
+      role={editMode ? 'button' : undefined}
+      aria-label={id}
+      className={cn(
+        'absolute z-10',
+        editMode ? 'pointer-events-auto cursor-grab touch-none active:cursor-grabbing' : 'pointer-events-auto',
+      )}
+      style={{
+        left: current.x,
+        top: current.y,
+        transform: 'translate(-50%, -50%)',
+      }}
+      onPointerDown={handleDown}
+      onPointerMove={handleMove}
+      onPointerUp={handleUp}
+      onPointerCancel={handleUp}
+    >
+      {/* 编辑模式下对内层内容屏蔽指针事件（pointer-events-none），
+          这样 pointerdown 会穿透到外层容器、只触发拖拽，而不会先命中按钮、
+          误触发 A/B/SELECT/START 按下。同时套一圈高亮环提示「可拖拽」。 */}
+      <div className={cn(editMode && 'pointer-events-none rounded-full ring-2 ring-accent/70')}>
+        {children}
       </div>
-
-      <FaceButtons onChange={emit} vibration={vibration} />
     </div>
   )
 }
@@ -300,26 +461,6 @@ function DPadArm({ direction, active }: { direction: NesButton; active: boolean 
 }
 
 /* ------------------------------- A / B --------------------------------- */
-
-interface FaceButtonsProps {
-  onChange: (button: NesButton, pressed: boolean) => void
-  vibration: boolean
-}
-
-function FaceButtons({ onChange, vibration }: FaceButtonsProps): ReactNode {
-  return (
-    // 仿 Famicom 手柄：B 在左下、A 在右上，斜着排
-    <div
-      className="pointer-events-auto flex items-end gap-3"
-      style={{ paddingBottom: 'calc(0.5rem * var(--pad-scale))' }}
-    >
-      <RoundButton button="b" label="B" onChange={onChange} vibration={vibration} />
-      <div style={{ paddingBottom: 'calc(1.75rem * var(--pad-scale))' }}>
-        <RoundButton button="a" label="A" onChange={onChange} vibration={vibration} />
-      </div>
-    </div>
-  )
-}
 
 interface PadButtonProps {
   button: NesButton

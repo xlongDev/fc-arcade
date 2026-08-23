@@ -3,7 +3,7 @@
  * 避免互相依赖。任何一条开发线都不要改这个文件的导出签名。
  */
 import type { GamepadMap, KeyboardMap, TurboConfig } from '@/types/input'
-import type { AppSettings } from '@/types/ui'
+import type { AppSettings, TouchLayout } from '@/types/ui'
 
 export const DEFAULT_KEYBOARD_MAP: KeyboardMap = {
   0: {
@@ -86,6 +86,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
   vibration: true,
   touchOpacity: 0.75,
   touchScale: 1,
+  /** 未自定义时一律用内置默认（见 DEFAULT_TOUCH_LAYOUT） */
+  touchLayout: null,
+}
+
+/**
+ * 触屏虚拟手柄内置默认布局（归一化坐标，左上角原点）。
+ * 默认按竖屏手机优化：D-Pad 与 A/B 放在游戏画面下方的空白区，
+ * SELECT/START 贴底居中，避免初始位置盖住游戏画布。
+ * 用户拖拽后会写入 settings.touchLayout 覆盖这一份。
+ */
+export const DEFAULT_TOUCH_LAYOUT: TouchLayout = {
+  dpad: { x: 0.15, y: 0.82 },
+  a: { x: 0.74, y: 0.78 },
+  b: { x: 0.86, y: 0.88 },
+  select: { x: 0.40, y: 0.94 },
+  start: { x: 0.60, y: 0.94 },
 }
 
 /** localStorage key，index.html 的防闪白脚本也依赖这个名字 */

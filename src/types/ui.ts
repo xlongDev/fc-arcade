@@ -102,6 +102,26 @@ export interface AppSettings {
   touchOpacity: number
   /** 移动端虚拟手柄尺寸倍率 0.7~1.4 */
   touchScale: number
+  /** 触屏虚拟手柄自定义布局；null = 使用内置默认布局 */
+  touchLayout: TouchLayout | null
+}
+
+/** 可拖拽定位的部件标识 */
+export type PadId = 'dpad' | 'a' | 'b' | 'select' | 'start'
+
+/** 部件中心坐标，相对手柄可拖拽区域（不含底部控制栏）的左上角，归一化到 0~1 */
+export interface PadPos {
+  x: number
+  y: number
+}
+
+/** 五个部件的归一化布局；null 表示尚未自定义，用内置默认 */
+export interface TouchLayout {
+  dpad: PadPos
+  a: PadPos
+  b: PadPos
+  select: PadPos
+  start: PadPos
 }
 
 export type ToastVariant = 'info' | 'success' | 'warning' | 'error'

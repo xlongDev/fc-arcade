@@ -15,6 +15,7 @@ import { TouchGamepad } from '@/input'
 import { useSettingsStore } from '@/store'
 import type { EmulatorAdapter } from '@/types/emulator'
 import { NES_VISIBLE_HEIGHT, NES_VISIBLE_WIDTH } from '@/types/emulator'
+import { DEFAULT_TOUCH_LAYOUT } from '@/config/defaults'
 import type { KeyboardMap, NesButton } from '@/types/input'
 import type { SaveSlot } from '@/types/storage'
 
@@ -56,6 +57,8 @@ export function PlayerPage() {
   const [controlBarHeight, setControlBarHeight] = useState(0)
 
   const [touchVisible, setTouchVisible] = useState(isTouch)
+  // 触屏手柄「布局编辑」模式：开启后各部件可拖拽重排
+  const [layoutEdit, setLayoutEdit] = useState(false)
   // 桌面端（Popover 浮层）与移动端（Sheet 全屏）是两条互不相关的路径，
   // 不能共用一个状态 —— 否则桌面端打开 Popover 时 Sheet 也会跟着打开，
   // 出现两个存档面板并列渲染的 bug
@@ -265,10 +268,18 @@ export function PlayerPage() {
                 if (settings.muted && value > 0) setSetting('muted', false)
               }}
               onScreenshot={() => void captureCover()}
-              onToggleTouch={() => setTouchVisible((v) => !v)}
+              onToggleTouch={() => {
+                setTouchVisible((v) => {
+                  if (v) setLayoutEdit(false)
+                  return !v
+                })
+              }}
               onOpenSaves={openSaves}
               onOpenKeyboard={() => setKeyboardOpen(true)}
               onToggleFullscreen={fullscreen.toggle}
+              layoutEdit={layoutEdit}
+              onToggleLayoutEdit={() => setLayoutEdit((v) => !v)}
+              onResetLayout={() => setSetting('touchLayout', null)}
             />
           ) : null}
         </AnimatePresence>
@@ -282,7 +293,12 @@ export function PlayerPage() {
             scale={settings.touchScale}
             vibration={settings.vibration}
             controlBarOffset={`${controlBarHeight || 112}px`}
-            className="pointer-events-none absolute inset-0 z-10 [&_*]:pointer-events-auto"
+            editMode={layoutEdit}
+            layout={settings.touchLayout}
+            onLayoutChange={(id, pos) =>
+              setSetting('touchLayout', { ...(settings.touchLayout ?? DEFAULT_TOUCH_LAYOUT), [id]: pos })
+            }
+            className="pointer-events-none absolute inset-0 z-10"
           />
         ) : null}
       </div>

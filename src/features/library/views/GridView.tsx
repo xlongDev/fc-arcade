@@ -89,7 +89,6 @@ export function GridView({
 
   const renderItem = (game: GameView) => {
     const shared = {
-      key: game.id,
       game,
       actions,
       animate,
@@ -97,8 +96,8 @@ export function GridView({
       selectionMode,
       variants: gridItemVariants,
     }
-    if (layout === 'grid') return <GameCard {...shared} />
-    return <CompactCard {...shared} variant={layout} />
+    if (layout === 'grid') return <GameCard key={game.id} {...shared} />
+    return <CompactCard key={game.id} {...shared} variant={layout} />
   }
 
   if (!virtualized) {
