@@ -81,12 +81,12 @@ function Row({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div className="min-w-0">
         <div className="text-sm text-text">{label}</div>
         {description ? <div className="text-xs text-faint">{description}</div> : null}
       </div>
-      <div className="shrink-0">{children}</div>
+      <div className="w-full sm:w-auto sm:shrink-0">{children}</div>
     </div>
   )
 }
@@ -152,6 +152,7 @@ function AppearanceSection() {
         <Segmented
           value={modeSetting}
           onChange={(next) => setMode(next as 'light' | 'dark' | 'system')}
+          fullWidth
           options={[
             { value: 'light', label: '浅色' },
             { value: 'dark', label: '深色' },
@@ -164,6 +165,7 @@ function AppearanceSection() {
         <Segmented
           value={layout}
           onChange={(next) => setSetting('layout', next as LibraryLayout)}
+          fullWidth
           options={LIBRARY_LAYOUTS.map((value) => ({ value, label: LAYOUT_LABEL[value] }))}
         />
       </Row>
@@ -182,6 +184,7 @@ function AppearanceSection() {
         <Segmented
           value={sortDir}
           onChange={(next) => setSetting('sortDir', next as 'asc' | 'desc')}
+          fullWidth
           options={[
             { value: 'desc', label: '降序' },
             { value: 'asc', label: '升序' },
@@ -260,6 +263,7 @@ function ScreenSection() {
         <Segmented
           value={screenFilter}
           onChange={(next) => setSetting('screenFilter', next as ScreenFilter)}
+          fullWidth
           options={(['none', 'scanline', 'crt', 'lcd'] as ScreenFilter[]).map((value) => ({
             value,
             label: filterLabels[value],
@@ -275,6 +279,7 @@ function ScreenSection() {
         <Segmented
           value={aspectRatio}
           onChange={(next) => setSetting('aspectRatio', next as AspectRatio)}
+          fullWidth
           options={ASPECT_RATIOS.map((value) => ({ value, label: ASPECT_RATIO_LABEL[value] }))}
         />
       </Row>

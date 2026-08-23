@@ -18,11 +18,14 @@
  */
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
 import type { NesButton } from '@/types/input'
 import type { PadId, PadPos, TouchLayout } from '@/types/ui'
 import { DEFAULT_TOUCH_LAYOUT } from '@/config/defaults'
+import { usePrefersReducedMotion } from '@/features/common/hooks/useMediaQuery'
 import { clamp } from '@/lib/format'
 import { cn } from '@/lib/cn'
+import { IconClose, IconDrag } from '@/components/icons'
 
 /** 12 个 30° 扇区。索引 0 从「右」开始顺时针（屏幕坐标 y 向下）。 */
 const SECTOR_DIRECTIONS: readonly (readonly NesButton[])[] = [
@@ -168,6 +171,20 @@ export function TouchGamepad({
     ? ORDER.filter((id) => id !== 'select' && id !== 'start')
     : ORDER
 
+  // 进入编辑模式时弹一次引导提示，说明可以拖动重排、完成即保存；
+  // 几秒后自动消失，也可手动关闭。非编辑模式立即隐藏。
+  const reduceMotion = usePrefersReducedMotion()
+  const [showHint, setShowHint] = useState(false)
+  useEffect(() => {
+    if (!editMode) {
+      setShowHint(false)
+      return
+    }
+    setShowHint(true)
+    const timer = window.setTimeout(() => setShowHint(false), 4500)
+    return () => window.clearTimeout(timer)
+  }, [editMode])
+
   return (
     <div
       ref={rootRef}
@@ -194,6 +211,32 @@ export function TouchGamepad({
           {renderPad(id, emit, vibration)}
         </DraggableCluster>
       ))}
+
+      <AnimatePresence>
+        {editMode && showHint ? (
+          <motion.div
+            key="layout-edit-hint"
+            initial={reduceMotion ? false : { opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.2 }}
+            className="pointer-events-none absolute inset-x-0 top-14 z-40 flex justify-center px-4"
+          >
+            <div className="glass flex items-center gap-2 rounded-full px-3 py-1.5 text-xs text-text shadow-lg">
+              <IconDrag size={14} className="shrink-0 text-text-muted" />
+              <span>拖动按钮调整位置，完成后点「完成布局编辑」保存</span>
+              <button
+                type="button"
+                aria-label="关闭提示"
+                onClick={() => setShowHint(false)}
+                className="pointer-events-auto ml-1 rounded-full p-0.5 text-text-muted transition-colors hover:text-text"
+              >
+                <IconClose size={13} />
+              </button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   )
 }
