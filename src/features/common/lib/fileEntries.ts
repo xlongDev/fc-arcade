@@ -32,19 +32,23 @@ function readDirBatch(reader: FileSystemDirectoryReader): Promise<FileSystemEntr
 async function readDirEntries(entry: FileSystemDirectoryEntry): Promise<FileSystemEntry[]> {
   const reader = entry.createReader()
   const all: FileSystemEntry[] = []
-  // readEntries 分批返回，空数组代表读完
+  // readEntries 分批返回，空数组代表读完；递归读取目录必须串行逐批取。
+  /* eslint-disable eslint/no-await-in-loop */
   for (;;) {
     const batch = await readDirBatch(reader)
     if (batch.length === 0) break
     all.push(...batch)
     if (all.length >= MAX_FILES) break
   }
+  /* eslint-enable eslint/no-await-in-loop */
   return all
 }
 
 async function walkEntry(entry: FileSystemEntry, depth: number, out: File[]): Promise<void> {
   if (out.length >= MAX_FILES) return
 
+  // 文件系统递归遍历天然串行：读文件与递归子目录都必须逐个 await。
+  /* eslint-disable eslint/no-await-in-loop */
   if (entry.isFile) {
     const file = await readEntryFile(entry as FileSystemFileEntry)
     if (file) out.push(file)
@@ -58,6 +62,7 @@ async function walkEntry(entry: FileSystemEntry, depth: number, out: File[]): Pr
       if (out.length >= MAX_FILES) return
     }
   }
+  /* eslint-enable eslint/no-await-in-loop */
 }
 
 /**
@@ -79,9 +84,12 @@ export async function collectFilesFromDataTransfer(transfer: DataTransfer): Prom
   }
 
   const out: File[] = []
+  // 逐个目录递归收集，不能并行（递归且共享 out 上限）。
+  /* eslint-disable eslint/no-await-in-loop */
   for (const entry of entries) {
     await walkEntry(entry, 0, out)
   }
+  /* eslint-enable eslint/no-await-in-loop */
   return out
 }
 

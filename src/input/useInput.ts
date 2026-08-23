@@ -9,7 +9,7 @@
  * 配置一律从参数进来（调用方自己从 settings store 取），这一层不 import 任何 store，
  * 保持可测试、可复用。
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type {
   GamepadInfo,
   GamepadMap,
@@ -52,19 +52,17 @@ export function useInput(options: UseInputOptions = {}): UseInputResult {
     enabled = true,
   } = options
 
-  const managerRef = useRef<ManagedInputManager | null>(null)
-  // StrictMode 下 effect 会挂载两次，第一次 cleanup 可能已经 dispose；
-  // 这里按需重建，保证拿到的永远是可用实例。
-  if (managerRef.current === null || managerRef.current.disposed) {
-    managerRef.current = createInputManager({
+  // 只在首次渲染创建一次；后续配置变化走下面的 effect（setKeyboardMap 等），
+  // 不重建实例。相比「渲染期按需重建」的旧写法，这里用惰性初始化避免读 / 写 ref 落在渲染阶段。
+  const [manager] = useState(() =>
+    createInputManager({
       keyboardMap,
       gamepadMap,
       turbo,
       vibration,
       autoAttach: false,
-    })
-  }
-  const manager = managerRef.current
+    }),
+  )
 
   const [gamepads, setGamepads] = useState<GamepadInfo[]>([])
 
@@ -79,10 +77,13 @@ export function useInput(options: UseInputOptions = {}): UseInputResult {
     }
   }, [manager, enabled])
 
+  // 读取外部状态；属 effect 与游戏手柄外部系统同步。
+  /* eslint-disable react/set-state-in-effect */
   useEffect(() => {
     setGamepads(manager.getGamepads())
     return manager.onGamepadChange(setGamepads)
   }, [manager])
+  /* eslint-enable react/set-state-in-effect */
 
   useEffect(() => {
     manager.setKeyboardMap(keyboardMap)

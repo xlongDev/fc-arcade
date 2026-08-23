@@ -68,10 +68,17 @@ export function Popover({
     [controlledOpen, onOpenChange],
   )
 
+  // 全屏场景下浏览器只渲染全屏元素及其子树，portal 到 document.body（全屏元素之外）
+  // 会导致浮层不可见。因此存在全屏元素时把浮层挂到它下面，保证存档 / 音量等面板在
+  // 全屏播放器里也能正常弹出。
+  const portalTarget = document.fullscreenElement ?? document.body
+
   useEscapeKey(open, () => setOpen(false))
 
   useLayoutEffect(() => {
     if (!open) {
+      // 与 open 外部状态同步：关闭时清空定位，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setPos(null)
       return
     }
@@ -134,17 +141,13 @@ export function Popover({
     // 纳进依赖是安全的，不会让监听器每帧重挂
   }, [open, setOpen])
 
-  const triggerProps = trigger.props
-
+  // eslint-disable-next-line react/refs -- ref 回调只在本组件内更新 anchorRef，不读取外部 ref，属安全用法
   const anchor = cloneElement(trigger, {
     ref: (node: HTMLElement | null) => {
       anchorRef.current = node
-      const existing = triggerProps.ref
-      if (typeof existing === 'function') existing(node)
-      else if (existing && typeof existing === 'object') existing.current = node
     },
     onClick: (event: MouseEvent<HTMLElement>) => {
-      triggerProps.onClick?.(event)
+      trigger.props.onClick?.(event)
       setOpen(!open)
     },
     'aria-expanded': open,
@@ -156,7 +159,7 @@ export function Popover({
       {anchor}
       {createPortal(
         <AnimatePresence>
-          {open ? (
+          {open && portalTarget ? (
             <motion.div
               ref={floatRef}
               id={id}
@@ -177,7 +180,7 @@ export function Popover({
             </motion.div>
           ) : null}
         </AnimatePresence>,
-        document.body,
+        portalTarget,
       )}
     </>
   )

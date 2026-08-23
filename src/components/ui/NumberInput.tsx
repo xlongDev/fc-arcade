@@ -53,6 +53,8 @@ export function NumberInput({
   // 外部改值（重置、别处联动）时把草稿拉回来；正在编辑的中间态不受影响，
   // 因为那时 draft 解析出来就等于 value
   useEffect(() => {
+    // 与 value 外部输入同步：外部值变化时回填草稿，属于 effect 与外部状态同步。
+    // eslint-disable-next-line react/set-state-in-effect
     setDraft((prev) => (Number(prev) === value ? prev : String(value)))
   }, [value])
 

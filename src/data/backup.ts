@@ -274,6 +274,9 @@ export async function exportBackup(options: ExportOptions = {}): Promise<Blob> {
   const total = binaries.length
   onProgress?.({ stage: 'packing', label: '打包 ROM 与存档…', processed: 0, total })
   let done = 0
+  // 逐条读取 + 进度 + 让出主线程：刻意串行而非 Promise.all，避免一次性把全部
+  // ROM/存档读进内存；yieldToMain 用于在大体积备份时保持界面响应与中止检查。
+  /* eslint-disable eslint/no-await-in-loop */
   for (const item of binaries) {
     const buf = new Uint8Array(await item.blob.arrayBuffer())
     files[item.path] = buf
@@ -282,6 +285,7 @@ export async function exportBackup(options: ExportOptions = {}): Promise<Blob> {
     if (done % 8 === 0) await yieldToMain()
     throwIfAborted(signal)
   }
+  /* eslint-enable eslint/no-await-in-loop */
 
   const zipped = zipSync(files, { level: 6 })
   onProgress?.({ stage: 'done', label: '完成', processed: total, total })

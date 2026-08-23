@@ -95,7 +95,7 @@ export function KeyboardMappingPanel({
         />
       </div>
 
-      <div className="flex flex-col gap-1.5">
+      <div className="grid grid-cols-1 gap-1.5 md:grid-cols-2">
         {NES_BUTTONS.map((button) => {
           const codes = keyboardMap[player][button]
           const isCapturing = capturing === button
@@ -104,7 +104,7 @@ export function KeyboardMappingPanel({
               key={button}
               className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface px-3 py-2"
             >
-              <span className="w-20 text-sm text-text">{BUTTON_LABEL[button]}</span>
+              <span className="w-16 shrink-0 text-sm text-text md:w-14">{BUTTON_LABEL[button]}</span>
               <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                 {codes.length === 0 ? (
                   <span className="text-xs text-faint">未绑定</span>

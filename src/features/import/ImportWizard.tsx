@@ -28,6 +28,8 @@ export function ImportWizard({ open, initialFiles, onClose, onImported }: Props)
     if (!open) {
       startedRef.current = null
       reset()
+      // 与 open 外部条件同步：关闭向导时复位到选择页，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setPickerMode(true)
       return
     }

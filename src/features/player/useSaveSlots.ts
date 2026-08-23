@@ -37,6 +37,8 @@ export function useSaveSlots({ gameId, adapterRef }: Options): SaveSlots {
 
   useEffect(() => {
     if (gameId === null) {
+      // 与 gameId 外部条件同步：无游戏时清空列表，属于 effect 与数据状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setRows(new Map())
       return
     }
@@ -51,6 +53,8 @@ export function useSaveSlots({ gameId, adapterRef }: Options): SaveSlots {
     return () => {
       alive = false
     }
+  // version 是手动刷新触发器（写档/删档后强制重读），即便 body 不直接读取也需作为依赖。
+  // eslint-disable-next-line react/exhaustive-effect-dependencies
   }, [gameId, version])
 
   const refresh = useCallback(() => setVersion((v) => v + 1), [])
@@ -152,7 +156,10 @@ export function useSaveSlots({ gameId, adapterRef }: Options): SaveSlots {
 
   // 自动存档。只在模拟器真正在跑的时候写，暂停时跳过。
   const writeRef = useRef(writeSlot)
-  writeRef.current = writeSlot
+  // 在 effect 中同步最新 writeSlot，避免渲染期写 ref（react/refs）。
+  useEffect(() => {
+    writeRef.current = writeSlot
+  }, [writeSlot])
 
   useEffect(() => {
     if (gameId === null || autoSaveIntervalSec <= 0) return

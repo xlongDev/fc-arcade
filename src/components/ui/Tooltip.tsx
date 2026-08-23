@@ -87,34 +87,32 @@ export function Tooltip({
         8,
       ),
     )
+  // content 变化时也要重新定位（内容尺寸可能改变），即便 body 不直接读取 content。
+  // eslint-disable-next-line react/exhaustive-effect-dependencies
   }, [open, side, align, content])
 
-  const childProps = children.props
-
+  // eslint-disable-next-line react/refs -- ref 回调只在本组件内更新 triggerRef，不读取外部 ref，属安全用法
   const trigger = cloneElement(children, {
     ref: (node: HTMLElement | null) => {
       triggerRef.current = node
-      const existing = childProps.ref
-      if (typeof existing === 'function') existing(node)
-      else if (existing && typeof existing === 'object') existing.current = node
     },
     onMouseEnter: (event: MouseEvent<HTMLElement>) => {
-      childProps.onMouseEnter?.(event)
+      children.props.onMouseEnter?.(event)
       show()
     },
     onMouseLeave: (event: MouseEvent<HTMLElement>) => {
-      childProps.onMouseLeave?.(event)
+      children.props.onMouseLeave?.(event)
       hide()
     },
     onFocus: (event: FocusEvent<HTMLElement>) => {
-      childProps.onFocus?.(event)
+      children.props.onFocus?.(event)
       show()
     },
     onBlur: (event: FocusEvent<HTMLElement>) => {
-      childProps.onBlur?.(event)
+      children.props.onBlur?.(event)
       hide()
     },
-    'aria-describedby': open ? id : childProps['aria-describedby'],
+    'aria-describedby': open ? id : children.props['aria-describedby'],
   })
 
   return (

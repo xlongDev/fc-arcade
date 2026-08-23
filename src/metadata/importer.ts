@@ -204,6 +204,8 @@ async function buildCandidate(
 
   const tempId = uid('imp')
   let duplicateOf: string | null = null
+  // 按 CRC 去重：命中即停（break），属于「首个命中」语义，刻意串行而非并行。
+  /* eslint-disable eslint/no-await-in-loop */
   for (const crc of crcs) {
     const inBatch = dedupe.seen.get(crc)
     if (inBatch !== undefined) {
@@ -216,6 +218,7 @@ async function buildCandidate(
       break
     }
   }
+  /* eslint-enable eslint/no-await-in-loop */
   for (const crc of crcs) {
     if (!dedupe.seen.has(crc)) dedupe.seen.set(crc, tempId)
   }
@@ -261,6 +264,9 @@ export async function importFiles(
   const dedupe: DedupeState = { existing, seen: new Map() }
   const candidates: ImportCandidate[] = []
 
+  // 逐文件串行：先让出主线程再解压（保证进度可见），单包内多 ROM 中途也要让出。
+  // 进度上报与让出主线程（yieldToUi）刻意串行，不让 Promise.all 破坏进度粒度。
+  /* eslint-disable eslint/no-await-in-loop */
   for (let i = 0; i < files.length; i += 1) {
     throwIfAborted(signal)
     const file = files[i]
@@ -288,6 +294,7 @@ export async function importFiles(
 
     emit('matching', i + 1, file.name)
   }
+  /* eslint-enable eslint/no-await-in-loop */
 
   emit('done', total, null)
   return candidates
@@ -340,6 +347,8 @@ export async function commitImport(
       skipped += 1
       continue
     }
+    // 写前再查一次库，确认没有并发重复写入；属于「先查后写」，刻意串行。
+    // eslint-disable-next-line eslint/no-await-in-loop
     const existing = await gameDao.findByCrc(crc).catch(() => undefined)
     if (existing) {
       skipped += 1

@@ -28,6 +28,7 @@ export function ShelfView({
 }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // eslint-disable-next-line react/incompatible-library -- TanStack Virtual 的 useVirtualizer 故意返回不可缓存的函数，React Compiler 无法安全 memoize；此处缓存与否无副作用，按官方建议局部放行。
   const virtualizer = useVirtualizer({
     horizontal: true,
     count: virtualized ? games.length : 0,

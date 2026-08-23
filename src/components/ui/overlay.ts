@@ -41,7 +41,10 @@ export function useBodyScrollLock(active: boolean): void {
 /** Escape 关闭。挂在 document 上，capture 阶段之外，谁在上层谁先关由调用顺序保证。 */
 export function useEscapeKey(active: boolean, onEscape: () => void): void {
   const handler = useRef(onEscape)
-  handler.current = onEscape
+  // 在 effect 中同步最新回调，避免渲染期写 ref（react/refs）。
+  useEffect(() => {
+    handler.current = onEscape
+  }, [onEscape])
 
   useEffect(() => {
     if (!active) return

@@ -83,7 +83,10 @@ export function useGameEditor(gameId: string | null): GameEditor {
 
   useEffect(() => {
     if (gameId === null) {
+      // 与 gameId 外部条件同步：无游戏时清空记录与	草稿，属于 effect 与数据状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setRecord(null)
+      // eslint-disable-next-line react/set-state-in-effect
       setDraft(null)
       return
     }
@@ -106,6 +109,8 @@ export function useGameEditor(gameId: string | null): GameEditor {
     return () => {
       alive = false
     }
+  // version 是手动刷新触发器（保存/删档后强制重读），即便 body 不直接读取也需作为依赖。
+  // eslint-disable-next-line react/exhaustive-effect-dependencies
   }, [gameId, version])
 
   const reload = useCallback(() => setVersion((v) => v + 1), [])

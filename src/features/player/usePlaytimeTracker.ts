@@ -31,14 +31,20 @@ export function usePlaytimeTracker({ game, adapterRef }: Options): (seconds: num
   const secondsRef = useRef(0)
   const capturedRef = useRef(false)
   const gameRef = useRef(game)
-  gameRef.current = game
+  // 在 effect 中同步最新 game，避免渲染期写 ref（react/refs）。
+  useEffect(() => {
+    gameRef.current = game
+  }, [game])
 
   const gameId = game?.id ?? null
 
+  // gameId 变化时重置计时基准；gameId 是「重置触发」语义而非被读取的变量。
+  /* eslint-disable react/exhaustive-effect-dependencies */
   useEffect(() => {
     secondsRef.current = 0
     capturedRef.current = false
   }, [gameId])
+  /* eslint-enable react/exhaustive-effect-dependencies */
 
   const captureCover = useCallback(async () => {
     const adapter = adapterRef.current

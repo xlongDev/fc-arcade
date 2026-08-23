@@ -21,6 +21,8 @@ export function GlobalDropZone({ enabled }: { enabled: boolean }) {
   useEffect(() => {
     if (!enabled || isOpen) {
       depth.current = 0
+      // 与 enabled / isOpen 外部条件同步：关闭拖拽态，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setActive(false)
       return
     }

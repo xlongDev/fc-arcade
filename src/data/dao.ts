@@ -178,7 +178,7 @@ export const coverDao: CoverDao = {
 export const saveStateDao: SaveStateDao = {
   async listByGame(gameId: string): Promise<SaveStateRow[]> {
     const rows = await db.saveStates.where('gameId').equals(gameId).toArray()
-    return rows.sort((a, b) => b.createdAt - a.createdAt)
+    return rows.toSorted((a, b) => b.createdAt - a.createdAt)
   },
 
   get(id: string): Promise<SaveStateRow | undefined> {

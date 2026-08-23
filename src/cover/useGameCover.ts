@@ -63,6 +63,8 @@ export function useGameCover(
 
   useEffect(() => {
     if (!stored) {
+      // 与外部缓存状态同步：stored 翻转时重置派生状态，属于 effect 与异步系统同步的合法场景。
+      // eslint-disable-next-line react/set-state-in-effect
       setState({ url: null, kind: 'generated', loading: false })
       return
     }
@@ -95,6 +97,8 @@ export function useGameCover(
       alive = false
       if (acquired) releaseCover(gameId)
     }
+  // version 是手动刷新触发器（如删除封面后强制重算），即便 body 不直接读取也需作为依赖。
+  // eslint-disable-next-line react/exhaustive-effect-dependencies
   }, [gameId, stored, version])
 
   return { url: state.url, loading: state.loading, kind: state.kind, seed: seed ?? title }

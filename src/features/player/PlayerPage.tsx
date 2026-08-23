@@ -73,19 +73,19 @@ export function PlayerPage() {
   const fullscreen = useFullscreen(shellRef)
 
   const busy = session.status === 'loading' || session.status === 'idle'
-  // 暂停 / 出错 / 面板展开 / 虚拟手柄可见 时强制常显；
-  // 虚拟手柄可见意味着用户在用触屏操作，藏起控制栏只会让 mute/全屏够不着。
-  // 非全屏时也强制常显：用户在浏览器里看着页面，需要能随时点暂停/截图/全屏，
-  // 自动淡出只会让他们找不到按钮；只有进入沉浸式全屏才让控制栏让位给游戏画面。
-  const keepControls =
+  // 暂停 / 出错 / 面板展开 / 虚拟手柄可见 时强制常显底部功能栏；
+  // 顶部标题栏额外要求「全屏」才允许自动隐藏，非全屏始终保留以便随时返回 / 暂停 / 全屏。
+  const keepBottomControls =
     !session.running ||
     savesPopoverOpen ||
     savesSheetOpen ||
     keyboardOpen ||
     session.error !== null ||
-    touchVisible ||
-    !fullscreen.active
-  const controls = useAutoHideControls(keepControls)
+    touchVisible
+  const keepTopControls = keepBottomControls || !fullscreen.active
+  // 底部与顶部各自独立计时：底部在运行（含非全屏）即可淡出，顶部仅在全屏沉浸时淡出。
+  const bottomControls = useAutoHideControls(keepBottomControls)
+  const topControls = useAutoHideControls(keepTopControls)
 
   // 控制栏经由 Framer Motion 的 motion.div 渲染，其 ref 会在首次 passive effect 时尚未挂载
   // （Framer 在 commit 之后才把 DOM 节点交给 ref），导致用 useEffect 测量时 ref 恒为 null、
@@ -106,7 +106,16 @@ export function PlayerPage() {
     controlBarRO.current.observe(node)
   }, [])
 
-  const hideCursor = useHideCursor(session.running && !controls.visible && !savesPopoverOpen && !savesSheetOpen)
+  const hideCursor = useHideCursor(
+    session.running && !bottomControls.visible && !savesPopoverOpen && !savesSheetOpen,
+  )
+
+  // 任意指针活动同时唤醒顶部与底部（底部隐藏时底层 canvas 点击也会恢复控制栏）。
+  // 直接定义为普通函数：window 级监听器已由 useAutoHideControls 内部接管，无需再走 useCallback。
+  const pingControls = () => {
+    bottomControls.ping()
+    topControls.ping()
+  }
 
   const exit = useCallback(() => void navigate('/'), [navigate])
 
@@ -205,7 +214,7 @@ export function PlayerPage() {
         'fixed inset-0 z-40 flex flex-col bg-bg',
         hideCursor && 'cursor-none',
       )}
-      onPointerMove={controls.ping}
+      onPointerMove={pingControls}
     >
       <div className="relative flex-1 overflow-hidden">
         <EmulatorScreen
@@ -216,7 +225,7 @@ export function PlayerPage() {
           dimmed={!session.running && session.error === null && !busy}
           fullscreen={fullscreen.active}
           onActivate={() => {
-            controls.ping()
+            pingControls()
             if (session.audioBlocked) void session.unlockAudio()
           }}
         />
@@ -233,7 +242,7 @@ export function PlayerPage() {
         />
 
         <AnimatePresence initial={false}>
-          {controls.visible ? (
+          {topControls.visible ? (
             <PlayerTopBar
               key="top"
               game={game}
@@ -245,7 +254,7 @@ export function PlayerPage() {
             />
           ) : null}
 
-          {controls.visible ? (
+          {bottomControls.visible ? (
             <PlayerControlBar
               ref={handleControlBarRef}
               key="bottom"

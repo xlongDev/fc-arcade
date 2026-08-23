@@ -14,6 +14,8 @@ export function usePrefersReducedMotion(): boolean {
 
   useEffect(() => {
     const mql = window.matchMedia(QUERY)
+    // 与媒体查询外部系统同步：挂载时立即同步初始值，属于 effect 与外部系统同步。
+    // eslint-disable-next-line react/set-state-in-effect
     setReduced(mql.matches)
     const onChange = (event: MediaQueryListEvent) => setReduced(event.matches)
     mql.addEventListener('change', onChange)

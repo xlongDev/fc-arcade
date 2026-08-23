@@ -82,19 +82,30 @@ export function useEmulatorSession({
   const [audioBlocked, setAudioBlocked] = useState(false)
   const [activeCore, setActiveCore] = useState<EmulatorCore | null>(null)
   const activeCoreRef = useRef<EmulatorCore | null>(null)
-  activeCoreRef.current = activeCore
   const [attempt, setAttempt] = useState(0)
 
   const playtimeRef = useRef(onPlaytime)
-  playtimeRef.current = onPlaytime
 
   // 游戏的存储内核偏好；用 ref 持有，避免启动 effect 把它列进依赖而每次都重建会话
   const gamePreferredRef = useRef<EmulatorCore | null>(null)
-  gamePreferredRef.current = game?.preferredCore ?? null
 
   // 音量在会话运行期间可以热改，不该进 effect 依赖，否则拖一下音量条就重载 ROM
   const volumeRef = useRef({ volume, muted })
-  volumeRef.current = { volume, muted }
+
+  // 以下 ref 在 effect 中同步（而非渲染期），规避 react/refs；
+  // 这些 effect 均声明在启动 effect 之前，保证首帧挂载时 ref 已是当前值。
+  useEffect(() => {
+    activeCoreRef.current = activeCore
+  }, [activeCore])
+  useEffect(() => {
+    playtimeRef.current = onPlaytime
+  }, [onPlaytime])
+  useEffect(() => {
+    gamePreferredRef.current = game?.preferredCore ?? null
+  }, [game])
+  useEffect(() => {
+    volumeRef.current = { volume, muted }
+  }, [volume, muted])
 
   const gameId = game?.id ?? null
   const romId = game?.romId ?? null
@@ -135,6 +146,8 @@ export function useEmulatorSession({
       const candidates: EmulatorCore[] = [preferred]
       let lastError: unknown = null
 
+      // 启动管线：create → init → loadRom 是强依赖的串行步骤，必须逐个 await。
+      /* eslint-disable eslint/no-await-in-loop */
       for (const candidate of candidates) {
         if (!alive) return
         try {
@@ -204,6 +217,7 @@ export function useEmulatorSession({
           created = null
         }
       }
+      /* eslint-enable eslint/no-await-in-loop */
 
       throw lastError ?? new EmulatorError('runtime', '所有内核都无法启动这个游戏')
     }

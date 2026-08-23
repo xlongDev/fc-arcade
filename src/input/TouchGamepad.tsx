@@ -118,26 +118,17 @@ export function TouchGamepad({
   onLayoutChange,
   className,
 }: TouchGamepadProps): ReactNode {
-  // 回调可能每次渲染都换引用，用 ref 兜住，避免所有子按钮跟着重建
-  const changeRef = useRef(onButtonChange)
-  changeRef.current = onButtonChange
-  const clearRef = useRef(onClear)
-  clearRef.current = onClear
-
-  const emit = useCallback((button: NesButton, pressed: boolean) => {
-    changeRef.current(button, pressed)
-  }, [])
-
+  // 直接把 onButtonChange / onClear 透传给子控件；window 失焦时清空按键状态。
   useEffect(() => {
     const onHide = (): void => {
-      clearRef.current?.()
+      onClear?.()
     }
     window.addEventListener('blur', onHide)
     return () => {
       window.removeEventListener('blur', onHide)
-      clearRef.current?.()
+      onClear?.()
     }
-  }, [])
+  }, [onClear])
 
   const style = useMemo<CSSProperties>(
     () =>
@@ -177,6 +168,8 @@ export function TouchGamepad({
   const [showHint, setShowHint] = useState(false)
   useEffect(() => {
     if (!editMode) {
+      // 与 editMode 外部条件同步：退出编辑模式立即隐藏引导，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setShowHint(false)
       return
     }
@@ -208,7 +201,7 @@ export function TouchGamepad({
           editMode={editMode}
           onCommit={onLayoutChange}
         >
-          {renderPad(id, emit, vibration)}
+          {renderPad(id, onButtonChange, vibration)}
         </DraggableCluster>
       ))}
 
@@ -244,20 +237,20 @@ export function TouchGamepad({
 /** 按部件标识渲染对应的手柄控件 */
 function renderPad(
   id: PadId,
-  emit: (button: NesButton, pressed: boolean) => void,
+  onChange: (button: NesButton, pressed: boolean) => void,
   vibration: boolean,
 ): ReactNode {
   switch (id) {
     case 'dpad':
-      return <DPad onChange={emit} vibration={vibration} />
+      return <DPad onChange={onChange} vibration={vibration} />
     case 'a':
-      return <RoundButton button="a" label="A" onChange={emit} vibration={vibration} />
+      return <RoundButton button="a" label="A" onChange={onChange} vibration={vibration} />
     case 'b':
-      return <RoundButton button="b" label="B" onChange={emit} vibration={vibration} />
+      return <RoundButton button="b" label="B" onChange={onChange} vibration={vibration} />
     case 'select':
-      return <SystemButton button="select" label="SELECT" onChange={emit} vibration={vibration} />
+      return <SystemButton button="select" label="SELECT" onChange={onChange} vibration={vibration} />
     case 'start':
-      return <SystemButton button="start" label="START" onChange={emit} vibration={vibration} />
+      return <SystemButton button="start" label="START" onChange={onChange} vibration={vibration} />
   }
 }
 

@@ -37,11 +37,15 @@ export function useStorageUsage(): UseStorageUsageResult {
   const [tick, setTick] = useState(0)
   const refresh = useCallback(() => setTick((n) => n + 1), [])
 
+  // 读取外部存储并 setState，属于与外部系统同步；tick 触发重新读数（手动刷新）。
+  // tick 是「重新读数」触发器，即便 body 不直接读取也需作为依赖。
+  /* eslint-disable react/set-state-in-effect, react/exhaustive-effect-dependencies */
   useEffect(() => {
     const cancel = read()
     return cancel
     // tick 变化时重新读数
   }, [read, tick])
+  /* eslint-enable react/set-state-in-effect, react/exhaustive-effect-dependencies */
 
   useEffect(() => onStorageChanged(refresh), [refresh])
 

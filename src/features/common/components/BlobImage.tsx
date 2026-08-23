@@ -20,6 +20,8 @@ export function BlobImage({ blob, alt = '', className, pixelated = true }: Props
 
   useEffect(() => {
     if (!blob) {
+      // 与外部传入的 blob 同步；blob 变化或卸载时清空并回收 objectURL，避免内存泄漏。
+      // eslint-disable-next-line react/set-state-in-effect
       setUrl(null)
       return
     }

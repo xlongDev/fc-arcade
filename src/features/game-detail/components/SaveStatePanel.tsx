@@ -45,6 +45,8 @@ export function SaveStatePanel({ gameId }: Props) {
     }
   }, [gameId])
 
+  // 挂载 / load 变化时重新拉取存档列表；load 内部读取外部存储并 setState，属于与外部系统同步。
+  // eslint-disable-next-line react/set-state-in-effect
   useEffect(() => load(), [load])
 
   const removeOne = async (row: SaveStateRow) => {

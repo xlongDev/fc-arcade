@@ -408,6 +408,8 @@ export async function matchRom(input: MatchInput, ctx?: MatchContext): Promise<M
   }
 
   // 2. 自学习：用户确认过的，比任何猜测都可信
+  // 命中即返回（continue/return），属于「首个命中」语义，刻意串行而非并行。
+  /* eslint-disable eslint/no-await-in-loop */
   for (const crc of crcs) {
     const row = ctx ? ctx.learned.get(crc) : await crcLearnDao.get(crc).catch(() => undefined)
     if (!row) continue
@@ -420,6 +422,7 @@ export async function matchRom(input: MatchInput, ctx?: MatchContext): Promise<M
       suggestions: [],
     }
   }
+  /* eslint-enable eslint/no-await-in-loop */
 
   // 3. 文件名模糊匹配
   const suggestions = matchByFileName(input.fileName, 5)

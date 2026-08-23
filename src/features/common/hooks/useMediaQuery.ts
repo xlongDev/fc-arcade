@@ -13,6 +13,8 @@ export function useMediaQuery(query: string): boolean {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return
     const mql = window.matchMedia(query)
     const onChange = (event: MediaQueryListEvent) => setMatches(event.matches)
+    // 与媒体查询外部系统同步：query 变化时立即同步初始值，属于 effect 与外部系统同步。
+    // eslint-disable-next-line react/set-state-in-effect
     setMatches(mql.matches)
     mql.addEventListener('change', onChange)
     return () => mql.removeEventListener('change', onChange)

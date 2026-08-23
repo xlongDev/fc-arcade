@@ -81,7 +81,7 @@ export function LibraryPage() {
     () =>
       allGames
         .filter((g) => g.lastPlayedAt !== null)
-        .sort((a, b) => (b.lastPlayedAt ?? 0) - (a.lastPlayedAt ?? 0))
+        .toSorted((a, b) => (b.lastPlayedAt ?? 0) - (a.lastPlayedAt ?? 0))
         .slice(0, RECENT_LIMIT),
     [allGames],
   )

@@ -82,7 +82,7 @@ export function DropdownMenu<T extends string>({
   const anchorRef = useRef<HTMLButtonElement>(null)
   const floatRef = useRef<HTMLDivElement>(null)
   const reduce = usePrefersReducedMotion()
-  const focusedIndexRef = useRef(-1)
+  const [focusedIndex, setFocusedIndex] = useState(-1)
 
   const currentLabel = options.find((o) => o.value === value)?.label ?? value
 
@@ -110,7 +110,7 @@ export function DropdownMenu<T extends string>({
     (next: boolean) => {
       if (disabled) return
       setOpen(next)
-      focusedIndexRef.current = -1
+      setFocusedIndex(-1)
       if (next) {
         // 延一帧等 DOM 更新后再测量
         requestAnimationFrame(updatePosition)
@@ -134,16 +134,16 @@ export function DropdownMenu<T extends string>({
       switch (event.key) {
         case 'ArrowDown':
           event.preventDefault()
-          focusedIndexRef.current = Math.min(focusedIndexRef.current + 1, usable.length - 1)
+          setFocusedIndex(Math.min(focusedIndex + 1, usable.length - 1))
           break
         case 'ArrowUp':
           event.preventDefault()
-          focusedIndexRef.current = Math.max(focusedIndexRef.current - 1, 0)
+          setFocusedIndex(Math.max(focusedIndex - 1, 0))
           break
         case 'Enter':
         case ' ': {
           event.preventDefault()
-          const item = usable[focusedIndexRef.current]
+          const item = usable[focusedIndex]
           if (item) {
             onChange(item.value as T)
             toggle(false)
@@ -156,7 +156,7 @@ export function DropdownMenu<T extends string>({
           break
       }
     },
-    [open, options, onChange, toggle],
+    [open, options, onChange, toggle, focusedIndex],
   )
 
   const selectOption = (optionValue: T) => {
@@ -238,7 +238,7 @@ export function DropdownMenu<T extends string>({
               <div className="glass-strong overflow-hidden rounded-xl shadow-lift">
                 {options.map((option, i) => {
                   const active = option.value === value
-                  const isFocused = focusedIndexRef.current === i
+                  const isFocused = focusedIndex === i
                   return (
                     <motion.button
                       key={option.value}
@@ -257,7 +257,7 @@ export function DropdownMenu<T extends string>({
                         damping: 34,
                       }}
                       onClick={() => selectOption(option.value as T)}
-                      onMouseEnter={() => { focusedIndexRef.current = i }}
+                      onMouseEnter={() => { setFocusedIndex(i) }}
                       className={cn(
                         'relative flex h-9 w-full items-center gap-2 px-3 text-left text-xs',
                         'transition-colors duration-150',

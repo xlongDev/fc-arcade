@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 
-const IDLE_MS = 2000
+const IDLE_MS = 5000
 
 /**
  * 游戏运行时自动隐藏鼠标光标。
@@ -14,6 +14,8 @@ export function useHideCursor(enabled: boolean): boolean {
 
   useEffect(() => {
     if (!enabled) {
+      // 与 enabled 外部条件同步：不启用时立即恢复光标，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setHidden(false)
       return
     }

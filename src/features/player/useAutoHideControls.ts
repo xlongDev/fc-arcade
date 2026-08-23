@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-const IDLE_MS = 2000
+const IDLE_MS = 5000
 
 /**
- * 控制栏自动淡出。
- * 暂停、出错、面板展开时强制常显——那些时候用户正需要点按钮，藏起来只会添乱。
+ * 控制栏自动淡出（通用计时器，可分别用于顶部标题栏与底部功能栏）。
+ *
+ * 调用方通过 keepVisible 决定「何时强制常显」：
+ * - 底部功能栏：暂停 / 出错 / 面板展开 / 虚拟手柄可见 时强制常显。
+ * - 顶部标题栏：在底部那些条件之上，还要求「全屏」才允许淡出（非全屏始终保留）。
+ *
+ * 鼠标静止 IDLE_MS（5s）后淡出；一旦 pointermove / pointerdown 立刻恢复。
  */
 export function useAutoHideControls(keepVisible: boolean): {
   visible: boolean
@@ -27,6 +32,8 @@ export function useAutoHideControls(keepVisible: boolean): {
   useEffect(() => {
     if (keepVisible) {
       window.clearTimeout(timerRef.current)
+      // 与 keepVisible 外部条件同步：强制常显时立即恢复可见，属于 effect 与交互状态同步。
+      // eslint-disable-next-line react/set-state-in-effect
       setVisible(true)
       return
     }

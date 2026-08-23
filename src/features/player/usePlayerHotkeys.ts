@@ -56,7 +56,11 @@ export function usePlayerHotkeys(handlers: PlayerHotkeyHandlers, enabled: boolea
   const bound = useMemo(() => collectBoundCodes(keyboardMap), [keyboardMap])
 
   const ref = useRef(handlers)
-  ref.current = handlers
+  // 在 effect 中同步最新 handlers，避免渲染期写 ref（react/refs）。
+  // 该 effect 声明在 keydown 监听 effect 之前，保证监听挂载时 ref 已是新值。
+  useEffect(() => {
+    ref.current = handlers
+  }, [handlers])
 
   useEffect(() => {
     if (!enabled) return

@@ -45,7 +45,11 @@ export function GameDetailDialog({ game, open, onClose }: Props) {
   const [reidentifying, setReidentifying] = useState(false)
 
   useEffect(() => {
+    // 与 open 外部条件同步：打开时重置到资料页，属于 effect 与交互状态同步。
+    // eslint-disable-next-line react/set-state-in-effect
     if (open) setTab('meta')
+  // game?.id 变化（切换到另一个游戏）时也重置到资料页，即便 body 仅读取 open。
+  // eslint-disable-next-line react/exhaustive-effect-dependencies
   }, [open, game?.id])
 
   if (!game) return null

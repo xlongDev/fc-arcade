@@ -130,9 +130,12 @@ export function ThemeProvider({ children }: { children: ReactNode }): ReactEleme
     }
   }, [])
 
-  // 用 ref 追踪最新状态，让回调引用稳定且总能读到最新值
+  // 用 ref 追踪最新状态，让回调引用稳定且总能读到最新值。
+  // 在 effect 中同步而非渲染期赋值，避免违反 react/refs（渲染期写 ref）。
   const stateRef = useRef({ themeId, mode, modeSetting, systemDark, reduceMotion })
-  stateRef.current = { themeId, mode, modeSetting, systemDark, reduceMotion }
+  useEffect(() => {
+    stateRef.current = { themeId, mode, modeSetting, systemDark, reduceMotion }
+  }, [themeId, mode, modeSetting, systemDark, reduceMotion])
 
   const setTheme = useCallback(
     (id: ThemeId, origin?: TransitionOrigin) => {
