@@ -1,6 +1,6 @@
 import { useId, useRef } from 'react'
 import type { KeyboardEvent, ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { cn } from '@/lib/cn'
 
@@ -145,7 +145,7 @@ export function Segmented<T extends string>({
             )}
           >
             {active ? (
-              <motion.span
+              <m.span
                 layoutId={layoutId}
                 transition={
                   reduce

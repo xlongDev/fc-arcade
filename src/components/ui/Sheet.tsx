@@ -1,7 +1,7 @@
 import { useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { IconClose } from '@/components/icons'
 import { cn } from '@/lib/cn'
@@ -62,7 +62,7 @@ export function Sheet({
             side === 'bottom' ? 'items-end justify-center' : 'items-stretch justify-end',
           )}
         >
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -71,7 +71,7 @@ export function Sheet({
             className="absolute inset-0 bg-bg/70 backdrop-blur-sm"
           />
 
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -121,7 +121,7 @@ export function Sheet({
             </div>
 
             {footer ? <footer className="border-t border-border px-5 py-4">{footer}</footer> : null}
-          </motion.div>
+          </m.div>
         </div>
       ) : null}
     </AnimatePresence>,

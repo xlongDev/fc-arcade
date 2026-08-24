@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, LayoutGroup, motion, type Variants } from 'motion/react'
+import { AnimatePresence, LayoutGroup, m, type Variants } from 'motion/react'
 import { useWindowVirtualizer } from '@tanstack/react-virtual'
 
 import type { GameView } from '@/types/game'
@@ -104,7 +104,7 @@ export function GridView({
     return (
       <div ref={containerRef}>
         <LayoutGroup>
-          <motion.div
+          <m.div
             style={gridStyle}
             initial="hidden"
             animate="show"
@@ -113,7 +113,7 @@ export function GridView({
             <AnimatePresence mode="popLayout">
               {games.map(renderItem)}
             </AnimatePresence>
-          </motion.div>
+          </m.div>
         </LayoutGroup>
       </div>
     )

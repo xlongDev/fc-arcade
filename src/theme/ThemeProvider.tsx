@@ -49,6 +49,10 @@ function readStored(): { themeId: ThemeId; mode: ColorModeSetting } {
 /**
  * 写回 localStorage 时只合并这两个字段，不动 settings 里其它键，
  * 这样设置 store（另一条线）持久化的数据不会被覆盖。
+ *
+ * 这是「主题状态双线同步」契约的一半——另一半在 src/store/settingsStore.ts：
+ * 本文件负责写入并广播 `fc-arcade:theme`，settingsStore 订阅该事件回写。
+ * 两处任一方的改动都可能破坏同步，改动前请通读另一处。
  */
 function persist(themeId: ThemeId, mode: ColorModeSetting): void {
   if (typeof localStorage === 'undefined') return

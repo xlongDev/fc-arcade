@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import type { KeyboardEvent } from 'react'
 
 import { displayTitle } from '@/features/common/lib/gameDisplay'
@@ -109,7 +109,7 @@ export function CompactCard({
   }
 
   return (
-    <motion.article
+    <m.article
       layout="position"
       layoutId={`game-${game.id}`}
       transition={SPRING}
@@ -119,6 +119,6 @@ export function CompactCard({
     >
       {hitArea}
       {children}
-    </motion.article>
+    </m.article>
   )
 }

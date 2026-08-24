@@ -1,5 +1,5 @@
 import type { KeyboardEvent, MouseEvent } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { Badge, IconButton } from '@/components/ui'
 import { IconEdit, IconPlay, IconTrash } from '@/components/icons'
@@ -139,7 +139,7 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
   }
 
   return (
-    <motion.div
+    <m.div
       layout="position"
       layoutId={`game-${game.id}`}
       transition={SPRING}
@@ -147,6 +147,6 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
     >
       {hitArea}
       {children}
-    </motion.div>
+    </m.div>
   )
 }

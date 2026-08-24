@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import { createPortal } from 'react-dom'
 
 import { IconCheck, IconChevronDown } from '@/components/icons'
@@ -202,7 +202,7 @@ export function DropdownMenu<T extends string>({
       {open &&
         createPortal(
           <AnimatePresence>
-            <motion.div
+            <m.div
               ref={floatRef}
               role="listbox"
               variants={panelVariants}
@@ -240,7 +240,7 @@ export function DropdownMenu<T extends string>({
                   const active = option.value === value
                   const isFocused = focusedIndex === i
                   return (
-                    <motion.button
+                    <m.button
                       key={option.value}
                       role="option"
                       aria-selected={active}
@@ -288,11 +288,11 @@ export function DropdownMenu<T extends string>({
                         <IconCheck size={9} strokeWidth={3} />
                       </span>
                       <span className="flex-1 truncate">{option.label}</span>
-                    </motion.button>
+                    </m.button>
                   )
                 })}
               </div>
-            </motion.div>
+            </m.div>
           </AnimatePresence>,
           document.body,
         )}

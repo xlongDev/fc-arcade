@@ -105,10 +105,16 @@ if (fontFiles.length === 0) {
 const html = readFileSync(join(DIST, 'index.html'), 'utf8')
 const entrySrc = (html.match(/<script[^>]*type="module"[^>]*src="([^"]+)"/) || [])[1]
 
-/** 把 /assets/foo.js 形式的 URL 解析成 dist 下的绝对路径 */
+/** 把 /assets/foo.js 或 /fc-arcade/assets/foo.js 形式的 URL 解析成 dist 下的绝对路径 */
 function resolveAsset(urlPath) {
   const rel = urlPath.replace(/^\//, '')
-  const abs = join(DIST, rel)
+  let abs = join(DIST, rel)
+  if (!existsSync(abs)) {
+    // 兼容带 base 前缀的构建产物（如 pnpm build --base /fc-arcade 时，
+    // HTML 里是 /fc-arcade/assets/x.js，需剥掉 base 段映射到 dist/assets/x.js）。
+    const idx = rel.indexOf('/')
+    if (idx > 0) abs = join(DIST, rel.slice(idx + 1))
+  }
   return existsSync(abs) ? abs : null
 }
 

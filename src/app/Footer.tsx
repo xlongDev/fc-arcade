@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import { Link } from 'react-router'
 
 import { IconChevronUp, IconGamepad, IconGitHub } from '@/components/icons'
@@ -66,7 +66,7 @@ export function Footer() {
   }
 
   return (
-    <motion.footer
+    <m.footer
       initial="hidden"
       animate="show"
       variants={variants}
@@ -142,6 +142,6 @@ export function Footer() {
           </button>
         </div>
       </div>
-    </motion.footer>
+    </m.footer>
   )
 }

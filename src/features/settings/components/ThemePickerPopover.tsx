@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { THEME_LIST, useTheme } from '@/theme'
 import type { ThemeId } from '@/types/theme'
@@ -81,14 +81,14 @@ export function ThemePickerContent({ onClose }: { onClose?: () => void }) {
               {/* 当前选中角标 */}
               <AnimatePresence>
                 {active ? (
-                  <motion.span
+                  <m.span
                     layoutId="theme-active-dot"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     className="absolute -top-0.5 -right-0.5 flex size-2.5 items-center justify-center rounded-full bg-accent"
                     aria-hidden="true"
                   >
                     <span className="size-1 rounded-full bg-on-accent" />
-                  </motion.span>
+                  </m.span>
                 ) : null}
               </AnimatePresence>
             </button>

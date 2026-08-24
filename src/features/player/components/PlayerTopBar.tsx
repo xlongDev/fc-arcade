@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { IconButton } from '@/components/ui'
 import { IconArrowLeft } from '@/components/icons'
@@ -24,7 +24,7 @@ export function PlayerTopBar({ game, fps, showFps, core, reduceMotion, onExit }:
   const subtitle = displaySubtitle(game)
 
   return (
-    <motion.header
+    <m.header
       initial={reduceMotion ? false : { y: -24, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={reduceMotion ? { opacity: 0 } : { y: -24, opacity: 0 }}
@@ -41,6 +41,6 @@ export function PlayerTopBar({ game, fps, showFps, core, reduceMotion, onExit }:
       </div>
 
       <PlayerStatusPill fps={fps} showFps={showFps} coreName={CORE_DISPLAY_NAME[core]} />
-    </motion.header>
+    </m.header>
   )
 }

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { Button } from '@/components/ui'
 import { IconClose, IconStarFilled, IconTrash } from '@/components/icons'
@@ -17,7 +17,7 @@ export function SelectionBar({ count, busy, onFavorite, onDelete, onClear }: Pro
   return (
     <AnimatePresence>
       {count > 0 ? (
-        <motion.div
+        <m.div
           initial={{ y: 80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 80, opacity: 0 }}
@@ -50,7 +50,7 @@ export function SelectionBar({ count, busy, onFavorite, onDelete, onClear }: Pro
               取消
             </Button>
           </div>
-        </motion.div>
+        </m.div>
       ) : null}
     </AnimatePresence>
   )

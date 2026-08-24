@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { IconUpload } from '@/components/icons'
 import {
@@ -73,14 +73,14 @@ export function GlobalDropZone({ enabled }: { enabled: boolean }) {
   return (
     <AnimatePresence>
       {active ? (
-        <motion.div
+        <m.div
           variants={overlayVariants}
           initial="initial"
           animate="animate"
           exit="exit"
           className="pointer-events-none fixed inset-0 z-[70] flex items-center justify-center bg-[var(--color-bg)]/70 p-6 backdrop-blur-md"
         >
-          <motion.div
+          <m.div
             initial={{ scale: 0.92 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0.96 }}
@@ -94,8 +94,8 @@ export function GlobalDropZone({ enabled }: { enabled: boolean }) {
             <p className="max-w-xs text-sm text-[var(--color-text-muted)]">
               支持整个文件夹，仅识别 .nes / .fds / .unf / .unif / .zip
             </p>
-          </motion.div>
-        </motion.div>
+          </m.div>
+        </m.div>
       ) : null}
     </AnimatePresence>
   )

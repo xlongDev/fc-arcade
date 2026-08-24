@@ -222,6 +222,7 @@ export const sessionDao: SessionDao = {
 
   async recentGameIds(limit: number): Promise<string[]> {
     if (limit <= 0) return []
+    // oxlint-disable-next-line unicorn/no-array-reverse -- Dexie Collection method, not Array#reverse
     const rows = await db.sessions.orderBy('startedAt').reverse().limit(limit * 8).toArray()
     const seen: string[] = []
     for (const row of rows) {

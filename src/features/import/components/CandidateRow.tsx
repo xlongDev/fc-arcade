@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { Badge, Checkbox, IconButton, Input, NumberInput } from '@/components/ui'
 import { IconAlert, IconEdit } from '@/components/icons'
@@ -107,7 +107,7 @@ export function CandidateRow({ candidate, onToggle, onPatch }: Props) {
 
       <AnimatePresence initial={false}>
         {editing ? (
-          <motion.div
+          <m.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -145,7 +145,7 @@ export function CandidateRow({ candidate, onToggle, onPatch }: Props) {
                 />
               </label>
             </div>
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
     </li>

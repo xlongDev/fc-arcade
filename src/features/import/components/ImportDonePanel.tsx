@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { IconCheck } from '@/components/icons'
 import { SPRING } from '@/features/common/motion'
@@ -11,14 +11,14 @@ interface Props {
 export function ImportDonePanel({ result }: Props) {
   return (
     <div className="flex flex-col items-center gap-5 py-10 text-center">
-      <motion.span
+      <m.span
         initial={{ scale: 0.4, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={SPRING}
         className="flex size-16 items-center justify-center rounded-full bg-[var(--color-success)]/15 text-[var(--color-success)]"
       >
         <IconCheck size={32} />
-      </motion.span>
+      </m.span>
 
       <div>
         <p className="font-pixel text-base text-[var(--color-text)]">导入完成</p>

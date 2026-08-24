@@ -18,7 +18,7 @@
  */
 import type { CSSProperties, PointerEvent as ReactPointerEvent, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 import type { NesButton } from '@/types/input'
 import type { PadId, PadPos, TouchLayout } from '@/types/ui'
 import { DEFAULT_TOUCH_LAYOUT } from '@/config/defaults'
@@ -207,7 +207,7 @@ export function TouchGamepad({
 
       <AnimatePresence>
         {editMode && showHint ? (
-          <motion.div
+          <m.div
             key="layout-edit-hint"
             initial={reduceMotion ? false : { opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -227,7 +227,7 @@ export function TouchGamepad({
                 <IconClose size={13} />
               </button>
             </div>
-          </motion.div>
+          </m.div>
         ) : null}
       </AnimatePresence>
     </div>

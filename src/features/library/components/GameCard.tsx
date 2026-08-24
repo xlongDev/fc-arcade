@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 import type { KeyboardEvent } from 'react'
 
 import { Badge } from '@/components/ui'
@@ -118,7 +118,7 @@ export function GameCard({
   }
 
   return (
-    <motion.article
+    <m.article
       layout="position"
       layoutId={`game-${game.id}`}
       transition={SPRING}
@@ -129,6 +129,6 @@ export function GameCard({
     >
       {hitArea}
       {children}
-    </motion.article>
+    </m.article>
   )
 }

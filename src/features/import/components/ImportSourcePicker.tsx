@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { Button } from '@/components/ui'
 import { IconFolder, IconUpload } from '@/components/icons'
@@ -61,7 +61,7 @@ export function ImportSourcePicker({ onFiles, listenPaste = true }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <motion.div
+      <m.div
         onDragOver={(event) => {
           if (!dataTransferHasFiles(event.dataTransfer)) return
           event.preventDefault()
@@ -108,7 +108,7 @@ export function ImportSourcePicker({ onFiles, listenPaste = true }: Props) {
             扫描文件夹
           </Button>
         </div>
-      </motion.div>
+      </m.div>
 
       <p className="text-center text-xs text-[var(--color-text-faint)]">
         本站不提供任何游戏 ROM，文件仅保存在你自己的浏览器里，不会上传。

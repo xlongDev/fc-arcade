@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { Spinner } from '@/components/ui'
 import { ConfirmDialog } from '@/features/common/components/ConfirmDialog'
@@ -155,15 +155,15 @@ export function LibraryPage() {
 
         <AnimatePresence mode="wait">
           {loading && games.length === 0 ? (
-            <motion.div key="loading" {...layoutMotionProps(reduceMotion)} className="flex min-h-[30vh] items-center justify-center">
+            <m.div key="loading" {...layoutMotionProps(reduceMotion)} className="flex min-h-[30vh] items-center justify-center">
               <Spinner />
-            </motion.div>
+            </m.div>
           ) : games.length === 0 ? (
-            <motion.div key="empty" {...layoutMotionProps(reduceMotion)}>
+            <m.div key="empty" {...layoutMotionProps(reduceMotion)}>
               <FilteredEmpty />
-            </motion.div>
+            </m.div>
           ) : layout === 'list' ? (
-            <motion.div key="list" {...layoutMotionProps(reduceMotion)}>
+            <m.div key="list" {...layoutMotionProps(reduceMotion)}>
               <ListView
                 games={games}
                 actions={gameActions}
@@ -172,9 +172,9 @@ export function LibraryPage() {
                 animate={animate}
                 virtualized={virtualized}
               />
-            </motion.div>
+            </m.div>
           ) : layout === 'shelf' ? (
-            <motion.div key="shelf" {...layoutMotionProps(reduceMotion)}>
+            <m.div key="shelf" {...layoutMotionProps(reduceMotion)}>
               <ShelfView
                 games={games}
                 actions={gameActions}
@@ -183,9 +183,9 @@ export function LibraryPage() {
                 animate={animate}
                 virtualized={virtualized}
               />
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div key={`${layout}-${sortBy}-${sortDir}`} {...layoutMotionProps(reduceMotion)}>
+            <m.div key={`${layout}-${sortBy}-${sortDir}`} {...layoutMotionProps(reduceMotion)}>
               <GridView
                 games={games}
                 layout={layout}
@@ -195,7 +195,7 @@ export function LibraryPage() {
                 animate={animate}
                 virtualized={virtualized}
               />
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

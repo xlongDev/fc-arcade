@@ -5,10 +5,15 @@
  * `{ state: { settings }, version }`——index.html 的防闪白脚本和 ThemeProvider
  * 都按这个形状读，不要改。
  *
- * 与主题的分工：themeId / mode 的**写入**由 <ThemeProvider> 负责（它要做视图过渡动画），
- * 写完会广播 fc-arcade:theme；本 store 订阅该事件把值同步回来，
- * 否则下一次写设置会用旧的 themeId 覆盖掉用户刚选的主题。
- * 因此设置界面切主题请调用 useTheme().setTheme()，不要 setSetting('themeId', ...)。
+ * ┌─ 架构不变量（Architectural Invariant，勿删任一方）──────────────────────┐
+ * │ themeId / mode 这一份「当前主题状态」同时由两个模块持有并持久化：         │
+ * │   · <ThemeProvider> 负责「视图侧写入」——它要做主题过渡动画，写入后会广播  │
+ * │     `fc-arcade:theme` 事件；                                         │
+ * │   · 本 store 订阅该事件把值回写，否则下一次普通 setSetting 会用旧值覆盖 │
+ * │     用户刚选的主题。                                                 │
+ * │ ⇒ 两条线必须同时存在且同步：改主题请走 useTheme().setTheme()（不要用     │
+ * │   setSetting('themeId'/'mode')），否则会绕过过渡动画并破坏这份契约。    │
+ * └──────────────────────────────────────────────────────────────────────┘
  */
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'

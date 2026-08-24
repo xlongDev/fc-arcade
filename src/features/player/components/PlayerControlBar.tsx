@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { forwardRef } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { IconButton, Popover, Slider } from '@/components/ui'
 import {
@@ -110,7 +110,7 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
   ) : null
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       initial={reduceMotion ? false : { y: 28, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
@@ -219,6 +219,6 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
           {fullscreenButton}
         </div>
       </div>
-    </motion.div>
+    </m.div>
   )
 })

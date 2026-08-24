@@ -1,6 +1,6 @@
 import { Suspense, useState } from 'react'
 import { useLocation, useOutlet } from 'react-router'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, LazyMotion, domAnimation, m } from 'motion/react'
 
 import { Spinner } from '@/components/ui'
 import { useReduceMotion } from '@/features/common/hooks/useReduceMotion'
@@ -38,32 +38,34 @@ export function RootLayout() {
   const immersive = location.pathname.startsWith('/play/')
 
   return (
-    <div className="relative flex min-h-dvh flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
-      {immersive ? null : <TopNav showSearch={location.pathname === '/'} />}
+    <LazyMotion features={domAnimation} strict>
+      <div className="relative flex min-h-dvh flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
+        {immersive ? null : <TopNav showSearch={location.pathname === '/'} />}
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.main
-          key={location.pathname}
-          variants={reduceMotion ? pageVariantsReduced : pageVariants}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          transition={reduceMotion ? { duration: 0.12 } : SPRING_SOFT}
-          className={
-            immersive
-              ? 'flex min-h-dvh flex-1 flex-col'
-              : 'mx-auto w-full max-w-[1600px] flex-1 px-3 pt-4 pb-28 sm:px-5 md:pb-10'
-          }
-        >
-          <Suspense fallback={<PageFallback />}>
-            <FrozenOutlet />
-          </Suspense>
-        </motion.main>
-      </AnimatePresence>
+        <AnimatePresence mode="wait" initial={false}>
+          <m.main
+            key={location.pathname}
+            variants={reduceMotion ? pageVariantsReduced : pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={reduceMotion ? { duration: 0.12 } : SPRING_SOFT}
+            className={
+              immersive
+                ? 'flex min-h-dvh flex-1 flex-col'
+                : 'mx-auto w-full max-w-[1600px] flex- 1 px-3 pt-4 pb-28 sm:px-5 md:pb-10'
+            }
+          >
+            <Suspense fallback={<PageFallback />}>
+              <FrozenOutlet />
+            </Suspense>
+          </m.main>
+        </AnimatePresence>
 
-      {immersive ? null : <Footer />}
-      {immersive ? null : <MobileTabBar />}
-      <GlobalDropZone enabled={!immersive} />
-    </div>
+        {immersive ? null : <Footer />}
+        {immersive ? null : <MobileTabBar />}
+        <GlobalDropZone enabled={!immersive} />
+      </div>
+    </LazyMotion>
   )
 }

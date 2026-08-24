@@ -1,7 +1,7 @@
 import { cloneElement, useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { MouseEvent, ReactElement, ReactNode, Ref } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { cn } from '@/lib/cn'
 
@@ -160,7 +160,7 @@ export function Popover({
       {createPortal(
         <AnimatePresence>
           {open && portalTarget ? (
-            <motion.div
+            <m.div
               ref={floatRef}
               id={id}
               role="dialog"
@@ -177,7 +177,7 @@ export function Popover({
               )}
             >
               {children}
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>,
         portalTarget,

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { IconHome, IconSettings, IconUpload } from '@/components/icons'
 import { useImport } from '@/features/import/ImportContext'
@@ -45,7 +45,7 @@ function TabLink({ to, label, icon, end = false }: TabLinkProps) {
       {({ isActive }) => (
         <span className="relative flex flex-col items-center gap-0.5 px-2 py-1 sm:gap-1 sm:py-1.5">
           {isActive ? (
-            <motion.span
+            <m.span
               layoutId="tab-active-bg"
               transition={SPRING_SOFT}
               className="absolute inset-0 rounded-2xl bg-[var(--color-surface-alt)]"

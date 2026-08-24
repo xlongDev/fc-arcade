@@ -1,7 +1,7 @@
 import { useId, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { IconClose } from '@/components/icons'
 import { cn } from '@/lib/cn'
@@ -67,7 +67,7 @@ export function Dialog({
     <AnimatePresence>
       {open ? (
         <div className="fixed inset-0 z-100 flex items-end justify-center p-0 sm:items-center sm:p-6">
-          <motion.div
+          <m.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -76,7 +76,7 @@ export function Dialog({
             className="absolute inset-0 bg-bg/70 backdrop-blur-sm"
           />
 
-          <motion.div
+          <m.div
             ref={panelRef}
             role="dialog"
             aria-modal="true"
@@ -125,7 +125,7 @@ export function Dialog({
                 {footer}
               </footer>
             ) : null}
-          </motion.div>
+          </m.div>
         </div>
       ) : null}
     </AnimatePresence>,

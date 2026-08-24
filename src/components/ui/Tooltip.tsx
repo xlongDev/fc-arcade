@@ -1,7 +1,7 @@
 import { cloneElement, useCallback, useId, useLayoutEffect, useRef, useState } from 'react'
 import type { FocusEvent, MouseEvent, ReactElement, ReactNode, Ref } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { cn } from '@/lib/cn'
 
@@ -121,7 +121,7 @@ export function Tooltip({
       {createPortal(
         <AnimatePresence>
           {open ? (
-            <motion.div
+            <m.div
               ref={floatRef}
               id={id}
               role="tooltip"
@@ -137,7 +137,7 @@ export function Tooltip({
               )}
             >
               {content}
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>,
         document.body,

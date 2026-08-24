@@ -8,7 +8,7 @@
  * 其余设置项一律走 useSettingsStore().setSetting。
  */
 import { useRef, useState } from 'react'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import {
   Button,
@@ -971,7 +971,7 @@ const settingsTabVariants = {
 
 function SettingsTabPanel({ children }: { children: React.ReactNode }) {
   return (
-    <motion.div
+    <m.div
       initial="initial"
       animate="animate"
       exit="exit"
@@ -979,7 +979,7 @@ function SettingsTabPanel({ children }: { children: React.ReactNode }) {
       transition={{ type: 'spring' as const, stiffness: 520, damping: 30, mass: 0.6 }}
     >
       {children}
-    </motion.div>
+    </m.div>
   )
 }
 

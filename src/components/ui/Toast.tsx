@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { IconAlert, IconCheck, IconClose, IconInfo } from '@/components/icons'
 import { cn } from '@/lib/cn'
@@ -56,7 +56,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
   const reduce = usePrefersReducedMotion()
 
   return (
-    <motion.li
+    <m.li
       layout={reduce ? false : 'position'}
       initial={reduce ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -86,7 +86,7 @@ function ToastCard({ toast, onDismiss }: { toast: Toast; onDismiss: (id: string)
       >
         <IconClose size={14} />
       </IconButton>
-    </motion.li>
+    </m.li>
   )
 }
 

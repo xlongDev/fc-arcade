@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router'
 import { useState } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { Button, IconButton, Popover, Tooltip } from '@/components/ui'
 import {
@@ -57,7 +57,7 @@ export function TopNav({ showSearch }: Props) {
                 {({ isActive }) => (
                   <>
                     {isActive ? (
-                      <motion.span
+                      <m.span
                         layoutId="nav-active-pill"
                         transition={SPRING_SOFT}
                         className="absolute inset-0 rounded-full bg-[var(--color-surface-alt)]"

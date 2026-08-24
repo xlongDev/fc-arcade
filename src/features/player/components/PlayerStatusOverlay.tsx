@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m } from 'motion/react'
 
 import { Button, Spinner } from '@/components/ui'
 import { IconAlert, IconPlay, IconVolume } from '@/components/icons'
@@ -44,7 +44,7 @@ export function PlayerStatusOverlay({
   return (
     <AnimatePresence mode="wait">
       {layer === null ? null : (
-        <motion.div
+        <m.div
           key={layer}
           variants={overlayVariants}
           initial="hidden"
@@ -101,7 +101,7 @@ export function PlayerStatusOverlay({
               <span className="font-pixel text-[11px] tracking-wide">已暂停</span>
             </button>
           )}
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   )

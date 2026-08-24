@@ -1,0 +1,52 @@
+import type { ThemeDefinition } from '@/types/theme'
+
+export const gameboy: ThemeDefinition = {
+  id: 'gameboy',
+  name: '掌机墨绿',
+  nameEn: 'Game Boy',
+  description: '四阶墨绿的点阵屏，得歪着头找角度才看得清。',
+  swatch: ['#0f380f', '#306230', '#9bbc0f'],
+  dark: {
+    // 关灯的 DMG：几乎全黑的墨绿，只有磷光还亮着
+    bg: '#0a1408',
+    bgAlt: '#0f2a0d',
+    surface: '#0f240e',
+    surfaceAlt: '#173618',
+    glass: 'rgba(155, 188, 15, 0.08)',
+    glassBorder: 'rgba(155, 188, 15, 0.24)',
+    border: 'rgba(139, 172, 15, 0.20)',
+    text: '#c3d94a',
+    textMuted: '#8bac0f',
+    textFaint: '#5f7f12',
+    accent: '#9bbc0f',
+    accentAlt: '#5f8c1a',
+    onAccent: '#0a1a06',
+    // 单色屏没有色相可用，语义靠明度分级；danger 保留一点红以免误删
+    success: '#8bac0f',
+    warning: '#d4c20c',
+    danger: '#d6543a',
+    shadow: 'rgba(0, 10, 0, 0.6)',
+  },
+  light: {
+    // 点亮的 DMG：黄绿背光 + 深墨绿点阵
+    bg: '#9bbc0f',
+    bgAlt: '#8aa80d',
+    surface: '#aecb2e',
+    surfaceAlt: '#93b30d',
+    glass: 'rgba(15, 56, 15, 0.10)',
+    glassBorder: 'rgba(15, 56, 15, 0.32)',
+    border: 'rgba(15, 56, 15, 0.28)',
+    text: '#0d2e0d',
+    textMuted: '#17400f',
+    textFaint: '#3b6420',
+    accent: '#0f380f',
+    accentAlt: '#2c5c2c',
+    onAccent: '#b9d43a',
+    success: '#20521a',
+    warning: '#4f4405',
+    danger: '#6d2409',
+    shadow: 'rgba(15, 56, 15, 0.22)',
+  },
+  radius: { sm: '2px', md: '3px', lg: '5px', xl: '8px', huge: '10px' },
+  effects: { scanline: 0.16, glassBlur: 6, noise: 0.12, glow: 0.05 },
+}

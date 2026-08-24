@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { IconClock, IconPlay } from '@/components/icons'
 import { displayTitle } from '@/features/common/lib/gameDisplay'
@@ -26,7 +26,7 @@ export function RecentRow({ games, onPlay }: Props) {
 
       <div className="-mx-1 flex gap-3 overflow-x-auto px-1 pb-2 pt-1 [scrollbar-width:thin]">
         {games.map((game) => (
-          <motion.button
+          <m.button
             key={game.id}
             type="button"
             onClick={() => onPlay(game)}
@@ -50,7 +50,7 @@ export function RecentRow({ games, onPlay }: Props) {
             <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-on-accent)] opacity-0 transition-opacity group-hover:opacity-100">
               <IconPlay size={14} />
             </span>
-          </motion.button>
+          </m.button>
         ))}
       </div>
     </section>

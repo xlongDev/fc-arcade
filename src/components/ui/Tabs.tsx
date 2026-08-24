@@ -1,6 +1,6 @@
 import { useId } from 'react'
 import type { ReactNode } from 'react'
-import { motion } from 'motion/react'
+import { m } from 'motion/react'
 
 import { cn } from '@/lib/cn'
 
@@ -89,7 +89,7 @@ export function Tabs<T extends string>({
             {/* 指示块必须排在文字前面：它和文字都是同一层级的定位元素，
                 谁写在后面谁盖住谁，放后面会把标签文字糊掉 */}
             {active ? (
-              <motion.span
+              <m.span
                 layoutId={layoutId}
                 transition={
                   reduce
