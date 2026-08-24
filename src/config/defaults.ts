@@ -17,14 +17,18 @@ export const DEFAULT_KEYBOARD_MAP: KeyboardMap = {
     start: ['Enter'],
   },
   1: {
-    up: ['KeyT'],
-    down: ['KeyG'],
-    left: ['KeyF'],
-    right: ['KeyH'],
-    a: ['Numpad2', 'KeyO'],
-    b: ['Numpad1', 'KeyI'],
-    select: ['Numpad5'],
-    start: ['Numpad6'],
+    // 玩家 2 默认用数字键盘簇：与 NostalgistAdapter 的 PLAYER2_BINDINGS 单字母
+    // 令牌空间（g/h/t/y/i/k/j/l）完全不相交，避免「按某个字母键同时触发两个按键」
+    // 的碰撞（例如旧默认里的 KeyI 既被当成玩家 2 的 B，又被 RetroArch 当成
+    // input_player2_up 的令牌，导致按下 I 时方向键被连带触发）。
+    up: ['Numpad8'],
+    down: ['Numpad2'],
+    left: ['Numpad4'],
+    right: ['Numpad6'],
+    a: ['Numpad3'],
+    b: ['Numpad1'],
+    select: ['Numpad7'],
+    start: ['Numpad9'],
   },
 }
 

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
+import { LazyMotion, domMax } from 'motion/react'
 
 import { notifyLibraryChanged } from '@/features/common/lib/storageEvents'
 
@@ -40,18 +41,24 @@ export function ImportProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <ImportContext.Provider value={value}>
-      {children}
-      {isOpen ? (
-        <Suspense fallback={null}>
-          <ImportWizard
-            open={isOpen}
-            initialFiles={files}
-            onClose={close}
-            onImported={notifyLibraryChanged}
-          />
-        </Suspense>
-      ) : null}
-    </ImportContext.Provider>
+    // 自带一层 LazyMotion：ImportWizard 的 Dialog 用 createPortal 挂到 body，
+    // 且 ImportProvider 位于 RootLayout 的 LazyMotion 作用域之外（它在 App 层、
+    // RouterProvider 之外），没有这层就驱动不了 enter 动画，Dialog 会卡在
+    // initial 态（opacity:0）永远不可见 → 点「导入 ROM」没反应。
+    <LazyMotion features={domMax}>
+      <ImportContext.Provider value={value}>
+        {children}
+        {isOpen ? (
+          <Suspense fallback={null}>
+            <ImportWizard
+              open={isOpen}
+              initialFiles={files}
+              onClose={close}
+              onImported={notifyLibraryChanged}
+            />
+          </Suspense>
+        ) : null}
+      </ImportContext.Provider>
+    </LazyMotion>
   )
 }
