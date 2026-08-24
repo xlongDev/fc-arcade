@@ -92,32 +92,89 @@ if (fontFiles.length === 0) {
 }
 
 // --------------------------------------------- 检查 3：首屏体积没有失控
+//
+// 根因（2026-08-24 修正）：旧逻辑取「dist 里最大的单个 JS 文件」当首屏，
+// 但首屏实际下载量 = HTML module 脚本 + 它**静态 import** 的全部 chunk
+// （含共享 chunk，如 motion 的 format-*.js）。最大单文件只数到 entry，
+// 把被它 import 的共享 chunk 漏掉了，导致预算守卫对真实下载量失明
+// （实测 entry gzip 122KB + format chunk 99.85KB ≈ 226KB，已超 220KB 预算，
+// 旧脚本却只数到 122KB 并报告「通过」）。
+// 修正：从 index.html 的 module 脚本出发，跟随静态 import 走完整引用图，
+// 累加这些 chunk 的 gzip 才是真实首屏体积。
 
-const entryJs = jsFiles
-  .map((f) => ({ file: f, size: statSync(f).size }))
-  .toSorted((a, b) => b.size - a.size)[0]
+const html = readFileSync(join(DIST, 'index.html'), 'utf8')
+const entrySrc = (html.match(/<script[^>]*type="module"[^>]*src="([^"]+)"/) || [])[1]
 
-let entryGzip = 0
-if (entryJs) {
-  entryGzip = gzipSync(readFileSync(entryJs.file)).length
-  if (entryGzip / 1024 > ENTRY_GZIP_BUDGET_KB) {
-    warn(
-      '首屏 JS 超出体积预算',
-      `${relative(ROOT, entryJs.file)} gzip 后 ${kb(entryGzip)}，` +
-        `预算 ${ENTRY_GZIP_BUDGET_KB} KB。检查是否有本应懒加载的模块被打进了首屏。`,
-    )
+/** 把 /assets/foo.js 形式的 URL 解析成 dist 下的绝对路径 */
+function resolveAsset(urlPath) {
+  const rel = urlPath.replace(/^\//, '')
+  const abs = join(DIST, rel)
+  return existsSync(abs) ? abs : null
+}
+
+/** 匹配静态与动态 import 指向的相对路径（Vite 产物里多为 ./x.js 或 ../x.js） */
+const IMPORT_RE = /(?:from|import)\s*["'](\.[^"']+\.js)["']/g
+
+/** 从某个 chunk 出发，收集它静态 import 到的同目录 chunk（不含动态 import） */
+function staticImportsOf(file) {
+  const src = readFileSync(file, 'utf8')
+  const dir = file.substring(0, file.lastIndexOf('/'))
+  const out = []
+  let m
+  while ((m = IMPORT_RE.exec(src))) {
+    // 动态 import() 在 Vite 产物里通常是 import("./x.js")，
+    // 但上面正则也会抓到。首屏只算静态依赖，故排除明显的 import( 调用。
+    if (src.slice(Math.max(0, m.index - 7), m.index).includes('import(')) continue
+    const abs = join(dir, m[1])
+    if (existsSync(abs)) out.push(abs)
   }
+  return out
+}
+
+/**
+ * 首屏 chunk 集合：从 HTML entry 出发，BFS 遍历静态 import 图。
+ * 只走静态依赖（首屏必须下载的），动态 import 的 chunk 运行时才拉，不计入。
+ */
+function firstScreenChunks(entryFile) {
+  const seen = new Set()
+  const queue = [entryFile]
+  while (queue.length) {
+    const f = queue.shift()
+    if (seen.has(f)) continue
+    seen.add(f)
+    for (const dep of staticImportsOf(f)) if (!seen.has(dep)) queue.push(dep)
+  }
+  return [...seen]
+}
+
+let entryChunks = []
+let entryGzip = 0
+if (entrySrc) {
+  const entryFile = resolveAsset(entrySrc)
+  if (entryFile) {
+    entryChunks = firstScreenChunks(entryFile)
+    entryGzip = entryChunks.reduce((n, f) => n + gzipSync(readFileSync(f)).length, 0)
+  }
+}
+
+if (entryChunks.length === 0) {
+  fail('无法确定首屏入口', 'index.html 缺少 type="module" 脚本或 dist 产物不完整')
+} else if (entryGzip / 1024 > ENTRY_GZIP_BUDGET_KB) {
+  warn(
+    '首屏 JS 超出体积预算',
+    `首屏 ${entryChunks.length} 个 chunk 合计 gzip ${kb(entryGzip)}，` +
+      `预算 ${ENTRY_GZIP_BUDGET_KB} KB。检查是否有本应懒加载的模块被打进了首屏。`,
+  )
 }
 
 // -------------------------------- 检查 4：可选内核没有被打进首屏
 // nostalgist 是可选内核（libretro WASM），必须走动态 import，
 // 一旦被静态引用就会把整个 WASM 加载器拖进首屏包。
-// 用运行时专属 token `libretro` 判定，避免误伤 NostalgistAdapter 里
-// 的 `RetroArch` 报错文案（那条 wrapper 文本会被打进首屏共享 chunk）。
+// 扫描整张首屏引用图（而非单个文件），用运行时专属 token `libretro` 判定，
+// 避免误伤 NostalgistAdapter 里的 `RetroArch` 报错文案
+// （那条 wrapper 文本会被打进首屏共享 chunk）。
 
-const nostalgistInEntry = entryJs
-  ? readFileSync(entryJs.file, 'utf8').includes('libretro')
-  : false
+const nostalgistInEntry = entryChunks.some((f) => readFileSync(f, 'utf8').includes('libretro'))
 if (nostalgistInEntry) {
   warn(
     'nostalgist 可能被打进了首屏包',
@@ -136,8 +193,11 @@ console.log(`  文件总数    ${files.length}`)
 console.log(`  JS          ${jsFiles.length} 个，共 ${kb(totalJs)}`)
 console.log(`  CSS         ${cssFiles.length} 个，共 ${kb(totalCss)}`)
 console.log(`  字体        ${fontFiles.length} 个`)
-if (entryJs) {
-  console.log(`  首屏 JS     ${kb(entryJs.size)}（gzip ${kb(entryGzip)}）`)
+if (entryChunks.length > 0) {
+  const entryRaw = entryChunks.reduce((n, f) => n + statSync(f).size, 0)
+  console.log(
+    `  首屏 JS     ${entryChunks.length} 个 chunk，共 ${kb(entryRaw)}（gzip ${kb(entryGzip)}）`,
+  )
 }
 console.log('─'.repeat(52))
 
