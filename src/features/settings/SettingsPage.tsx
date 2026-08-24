@@ -57,9 +57,12 @@ import {
   crcLearnDao,
   db,
   downloadBackup,
+  downloadSaveStatesBackup,
   gameDao,
   importBackup,
+  importSaveStates,
   previewBackup,
+  previewSaveStatesBackup,
   romDao,
   saveStateDao,
   sessionDao,
@@ -470,10 +473,13 @@ function DataSection() {
   const [previewOpen, setPreviewOpen] = useState(false)
   const [previewLoading, setPreviewLoading] = useState(false)
   const [preview, setPreview] = useState<BackupPreview | null>(null)
+  const [importKind, setImportKind] = useState<'full' | 'saves' | null>(null)
   const [clearing, setClearing] = useState(false)
   const [pendingClear, setPendingClear] = useState<'saves' | 'roms' | 'records' | 'all' | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  const savesFileRef = useRef<HTMLInputElement>(null)
   const pendingFile = useRef<File | null>(null)
+  const pendingSavesFile = useRef<File | null>(null)
 
   const handleExport = async () => {
     setMode('export')
@@ -489,6 +495,28 @@ function DataSection() {
       toast({
         variant: 'error',
         title: '导出失败',
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setMode(null)
+      setProgress(null)
+    }
+  }
+
+  const handleExportSaves = async () => {
+    setMode('export')
+    setProgress(null)
+    try {
+      await downloadSaveStatesBackup({ onProgress: setProgress })
+      toast({
+        variant: 'success',
+        title: '存档已导出',
+        description: '全部即时存档与自动存档已打包到一个 .fcab 文件里。',
+      })
+    } catch (error) {
+      toast({
+        variant: 'error',
+        title: '导出存档失败',
         description: error instanceof Error ? error.message : undefined,
       })
     } finally {
@@ -532,6 +560,40 @@ function DataSection() {
     }
   }
 
+  const runImportSaves = async (file: File) => {
+    setPreviewOpen(false)
+    setMode('import')
+    setProgress(null)
+    try {
+      const summary = await importSaveStates(file, {
+        mode: replace ? 'replace' : 'merge',
+        onProgress: setProgress,
+      })
+      notifyStorageChanged()
+      const detail = `${summary.saveStates} 个存档已恢复`
+      toast({ variant: 'success', title: '存档恢复完成', description: detail })
+      if (summary.errors.length > 0) {
+        toast({
+          variant: 'warning',
+          title: `${summary.errors.length} 项未恢复`,
+          description: summary.errors[0],
+        })
+      }
+    } catch (error) {
+      const message =
+        error instanceof BackupError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '恢复失败'
+      toast({ variant: 'error', title: '恢复存档失败', description: message })
+    } finally {
+      setMode(null)
+      setProgress(null)
+      pendingSavesFile.current = null
+    }
+  }
+
   /** 选中文件后先解析出预览，再让用户确认是否恢复 */
   const requestPreview = async (file: File) => {
     pendingFile.current = file
@@ -540,6 +602,7 @@ function DataSection() {
     try {
       const result = await previewBackup(file)
       setPreview(result)
+      setImportKind('full')
       setPreviewOpen(true)
     } catch (error) {
       const message =
@@ -559,6 +622,35 @@ function DataSection() {
     event.target.value = ''
     if (!file) return
     void requestPreview(file)
+  }
+
+  const requestPreviewSaves = async (file: File) => {
+    pendingSavesFile.current = file
+    setPreviewLoading(true)
+    setPreview(null)
+    try {
+      const result = await previewSaveStatesBackup(file)
+      setPreview(result)
+      setImportKind('saves')
+      setPreviewOpen(true)
+    } catch (error) {
+      const message =
+        error instanceof BackupError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '预览失败'
+      toast({ variant: 'error', title: '无法读取存档备份', description: message })
+    } finally {
+      setPreviewLoading(false)
+    }
+  }
+
+  const onPickSavesFile = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file) return
+    void requestPreviewSaves(file)
   }
 
   const handleClearSaves = async () => {
@@ -683,6 +775,17 @@ function DataSection() {
           </Button>
         </Row>
 
+        <Row label="导出存档" description="仅包含所有即时存档与自动存档，不含 ROM 与游戏记录">
+          <Button
+            variant="secondary"
+            icon={<IconDownload size={15} />}
+            onClick={() => void handleExportSaves()}
+            disabled={mode !== null}
+          >
+            {mode === 'export' ? '导出中…' : '导出存档'}
+          </Button>
+        </Row>
+
         <Row
           label="恢复备份"
           description="选择 .fcab 文件后，会先预览其中包含的内容，再让你确认恢复"
@@ -702,6 +805,29 @@ function DataSection() {
               accept=".fcab,application/zip,.zip"
               className="hidden"
               onChange={onPickFile}
+            />
+          </div>
+        </Row>
+
+        <Row
+          label="导入存档"
+          description="选择仅含存档的 .fcab 文件，预览后导入到本机"
+        >
+          <div className="flex items-center gap-2">
+            <Button
+              variant="secondary"
+              icon={<IconUpload size={15} />}
+              onClick={() => savesFileRef.current?.click()}
+              disabled={mode !== null || previewLoading}
+            >
+              {mode === 'import' ? '恢复中…' : previewLoading ? '读取中…' : '选择存档文件'}
+            </Button>
+            <input
+              ref={savesFileRef}
+              type="file"
+              accept=".fcab,application/zip,.zip"
+              className="hidden"
+              onChange={onPickSavesFile}
             />
           </div>
         </Row>
@@ -831,9 +957,15 @@ function DataSection() {
         onClose={() => {
           setPreviewOpen(false)
           pendingFile.current = null
+          pendingSavesFile.current = null
+          setImportKind(null)
         }}
-        title="预览备份内容"
-        description="确认无误后再恢复。下方为这份备份中包含的数据量概览。"
+        title={importKind === 'saves' ? '预览存档备份内容' : '预览备份内容'}
+        description={
+          importKind === 'saves'
+            ? '确认无误后再导入。下方为这份存档备份中包含的数据量概览。'
+            : '确认无误后再恢复。下方为这份备份中包含的数据量概览。'
+        }
         size="md"
         footer={
           <div className="flex justify-end gap-2">
@@ -842,6 +974,8 @@ function DataSection() {
               onClick={() => {
                 setPreviewOpen(false)
                 pendingFile.current = null
+                pendingSavesFile.current = null
+                setImportKind(null)
               }}
               disabled={mode === 'import'}
             >
@@ -851,7 +985,11 @@ function DataSection() {
               variant={replace ? 'danger' : 'primary'}
               loading={mode === 'import'}
               onClick={() => {
-                if (pendingFile.current) void runImport(pendingFile.current)
+                if (importKind === 'saves' && pendingSavesFile.current) {
+                  void runImportSaves(pendingSavesFile.current)
+                } else if (importKind === 'full' && pendingFile.current) {
+                  void runImport(pendingFile.current)
+                }
               }}
             >
               开始恢复
@@ -861,24 +999,32 @@ function DataSection() {
       >
         {preview ? (
           <div className="flex flex-col gap-4">
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <PreviewStat label="游戏" value={preview.games} />
-              <PreviewStat label="ROM" value={preview.roms} />
-              <PreviewStat label="存档" value={preview.saveStates} />
-              <PreviewStat label="封面" value={preview.covers} />
-              <PreviewStat label="会话" value={preview.sessions} />
-              <PreviewStat label="CRC 学习" value={preview.crcLearn} />
-            </div>
+            {importKind === 'saves' ? (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <PreviewStat label="存档" value={preview.saveStates} />
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <PreviewStat label="游戏" value={preview.games} />
+                <PreviewStat label="ROM" value={preview.roms} />
+                <PreviewStat label="存档" value={preview.saveStates} />
+                <PreviewStat label="封面" value={preview.covers} />
+                <PreviewStat label="会话" value={preview.sessions} />
+                <PreviewStat label="CRC 学习" value={preview.crcLearn} />
+              </div>
+            )}
 
             <div className="rounded-lg border border-border bg-surface px-3 py-2 text-xs text-muted">
               <div>生成时间：{new Date(preview.manifest.createdAt).toLocaleString()}</div>
               <div>
                 应用版本：v{preview.manifest.appVersion} · 备份格式 v{preview.manifest.version}
               </div>
-              <div>含设置：{preview.settings ? '是' : '否'}</div>
+              {importKind !== 'saves' ? (
+                <div>含设置：{preview.settings ? '是' : '否'}</div>
+              ) : null}
             </div>
 
-            {preview.sampleTitles.length > 0 ? (
+            {importKind !== 'saves' && preview.sampleTitles.length > 0 ? (
               <div>
                 <div className="mb-1.5 text-xs text-faint">包含的游戏（抽样）</div>
                 <ul className="flex flex-col gap-1">
@@ -896,7 +1042,11 @@ function DataSection() {
 
             <Row
               label="恢复前清空现有数据"
-              description="勾选后，恢复会先删除本机全部游戏 / ROM / 存档，再写入备份"
+              description={
+                importKind === 'saves'
+                  ? '勾选后，导入前会先删除本机全部存档，再写入备份中的存档'
+                  : '勾选后，恢复会先删除本机全部游戏 / ROM / 存档，再写入备份'
+              }
             >
               <Switch checked={replace} onChange={setReplace} />
             </Row>

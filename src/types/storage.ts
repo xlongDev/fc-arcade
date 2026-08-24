@@ -157,13 +157,13 @@ export interface CrcLearnDao {
 
 /** 备份文件清单（zip 内的 manifest.json）。备份是一个含二进制本体的完整快照。 */
 export interface BackupManifest {
-  format: 'fc-arcade-backup'
+  format: 'fc-arcade-backup' | 'fc-arcade-saves'
   /** 备份格式版本，不兼容时升级并写迁移 */
   version: number
   /** 导出时的应用版本，仅作展示 */
   appVersion: string
   createdAt: number
-  /** 是否包含 ROM/封面/存档等二进制本体（当前恒为 true） */
+  /** 是否包含 ROM/封面/存档等二进制本体（完整备份恒为 true；存档备份恒为 false） */
   includesRoms: boolean
   counts: {
     games: number

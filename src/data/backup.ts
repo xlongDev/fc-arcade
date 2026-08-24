@@ -468,6 +468,226 @@ export async function importBackup(
   return summary
 }
 
+/* ------------------------------- 单独导出 / 导入存档 ------------------------------- */
+
+const SAVES_FORMAT = 'fc-arcade-saves' as const
+const SAVES_MANIFEST_NAME = 'manifest.json'
+
+export async function exportSaveStates(options: ExportOptions = {}): Promise<Blob> {
+  const { onProgress, signal } = options
+  throwIfAborted(signal)
+
+  onProgress?.({ stage: 'reading', label: '读取存档…', processed: 0, total: 1 })
+  const saveStates = await db.saveStates.toArray()
+  throwIfAborted(signal)
+  onProgress?.({ stage: 'reading', label: '读取完成', processed: 1, total: 1 })
+
+  const { strToU8, zipSync } = await getFflate()
+
+  const files: Record<string, Uint8Array> = {}
+  const manifest: BackupManifest = {
+    format: SAVES_FORMAT,
+    version: BACKUP_FORMAT_VERSION,
+    appVersion: APP_VERSION,
+    createdAt: Date.now(),
+    includesRoms: false,
+    counts: {
+      games: 0,
+      roms: 0,
+      covers: 0,
+      saveStates: saveStates.length,
+      sessions: 0,
+      crcLearn: 0,
+      settings: false,
+    },
+  }
+  files[SAVES_MANIFEST_NAME] = strToU8(JSON.stringify(manifest, null, 2))
+  files['saveStates.json'] = strToU8(
+    JSON.stringify(
+      saveStates.map(({ id, gameId, slot, core, version, label, createdAt }) => ({
+        id,
+        gameId,
+        slot,
+        core,
+        version,
+        label,
+        createdAt,
+      })),
+    ),
+  )
+
+  const binaries: Array<{ path: string; blob: Blob }> = []
+  for (const sv of saveStates) {
+    binaries.push({ path: `saveStates/${sv.id}.bin`, blob: sv.blob })
+    if (sv.thumb) binaries.push({ path: `saveStates/thumbs/${sv.id}.bin`, blob: sv.thumb })
+  }
+
+  const total = binaries.length
+  onProgress?.({ stage: 'packing', label: '打包存档…', processed: 0, total })
+  let done = 0
+  // 逐条读取 + 进度 + 让出主线程：刻意串行而非 Promise.all，避免一次性把全部存档读进内存。
+  /* eslint-disable eslint/no-await-in-loop */
+  for (const item of binaries) {
+    const buf = new Uint8Array(await item.blob.arrayBuffer())
+    files[item.path] = buf
+    done += 1
+    onProgress?.({ stage: 'packing', label: '打包存档…', processed: done, total })
+    if (done % 8 === 0) await yieldToMain()
+    throwIfAborted(signal)
+  }
+  /* eslint-enable eslint/no-await-in-loop */
+
+  const zipped = zipSync(files, { level: 6 })
+  onProgress?.({ stage: 'done', label: '完成', processed: total, total })
+  return new Blob([zipped], { type: BACKUP_MIME })
+}
+
+export async function downloadSaveStatesBackup(options: ExportOptions = {}): Promise<void> {
+  const blob = await exportSaveStates(options)
+  const stamp = new Date().toISOString().slice(0, 10)
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `fc-arcade-saves-${stamp}.${BACKUP_EXTENSION}`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export async function importSaveStates(
+  source: Blob | ArrayBuffer,
+  options: RestoreOptions = {},
+): Promise<RestoreSummary> {
+  const { mode = 'merge', onProgress, signal } = options
+  throwIfAborted(signal)
+
+  onProgress?.({ stage: 'reading', label: '解包存档备份…', processed: 0, total: 3 })
+  const bytes =
+    source instanceof ArrayBuffer ? new Uint8Array(source) : new Uint8Array(await source.arrayBuffer())
+
+  const { unzipSync, strFromU8 } = await getFflate()
+
+  let files: Record<string, Uint8Array>
+  try {
+    files = unzipSync(bytes)
+  } catch {
+    throw new BackupError('INVALID_FILE', '文件不是有效的存档备份（zip 解析失败）')
+  }
+  throwIfAborted(signal)
+
+  const manifestBytes = files[SAVES_MANIFEST_NAME]
+  if (!manifestBytes) throw new BackupError('INVALID_FILE', '备份缺少 manifest.json')
+  let manifest: BackupManifest
+  try {
+    manifest = JSON.parse(strFromU8(manifestBytes)) as BackupManifest
+  } catch {
+    throw new BackupError('INVALID_FILE', 'manifest.json 解析失败')
+  }
+  if (manifest.format !== SAVES_FORMAT)
+    throw new BackupError('INVALID_FILE', '不是 FC Arcade 存档备份文件')
+  if (manifest.version > BACKUP_FORMAT_VERSION)
+    throw new BackupError(
+      'UNSUPPORTED_VERSION',
+      `备份版本 v${manifest.version} 高于当前支持的最高版本 v${BACKUP_FORMAT_VERSION}`,
+    )
+
+  onProgress?.({ stage: 'parsing', label: '解析存档…', processed: 1, total: 3 })
+  const ssMetas = parseJsonArray<SaveStateMeta>(files['saveStates.json'], strFromU8)
+  const ssBlobs = new Map<string, Uint8Array>()
+  const ssThumbs = new Map<string, Uint8Array>()
+  for (const key of Object.keys(files)) {
+    let m: RegExpExecArray | null
+    if ((m = /^saveStates\/thumbs\/([^/]+)\.bin$/.exec(key)))
+      ssThumbs.set(decodeURIComponent(m[1]), files[key])
+    else if ((m = /^saveStates\/([^/]+)\.bin$/.exec(key))) ssBlobs.set(decodeURIComponent(m[1]), files[key])
+  }
+  throwIfAborted(signal)
+
+  const summary: RestoreSummary = {
+    games: 0,
+    roms: 0,
+    covers: 0,
+    saveStates: 0,
+    sessions: 0,
+    crcLearn: 0,
+    settings: false,
+    errors: [],
+  }
+
+  onProgress?.({ stage: 'writing', label: '写入存档…', processed: 2, total: 3 })
+  await db.transaction('rw', [db.saveStates], async () => {
+    if (mode === 'replace') await db.saveStates.clear()
+
+    const ssRows = []
+    for (const meta of ssMetas) {
+      const b = ssBlobs.get(meta.id)
+      if (!b) {
+        summary.errors.push(`存档 ${meta.id} 的二进制缺失，已跳过`)
+        continue
+      }
+      ssRows.push({
+        ...meta,
+        blob: toBlob(b),
+        thumb: ssThumbs.has(meta.id) ? toBlob(ssThumbs.get(meta.id)!) : null,
+      })
+    }
+    if (ssRows.length > 0) await db.saveStates.bulkPut(ssRows)
+    summary.saveStates = ssRows.length
+  })
+
+  onProgress?.({ stage: 'done', label: '完成', processed: 3, total: 3 })
+  return summary
+}
+
+export async function previewSaveStatesBackup(
+  source: Blob | ArrayBuffer,
+  options: PreviewOptions = {},
+): Promise<BackupPreview> {
+  const { signal } = options
+  throwIfAborted(signal)
+
+  const bytes =
+    source instanceof ArrayBuffer ? new Uint8Array(source) : new Uint8Array(await source.arrayBuffer())
+  const { unzipSync, strFromU8 } = await getFflate()
+
+  let files: Record<string, Uint8Array>
+  try {
+    files = unzipSync(bytes)
+  } catch {
+    throw new BackupError('INVALID_FILE', '文件不是有效的存档备份（zip 解析失败）')
+  }
+  throwIfAborted(signal)
+
+  const manifestBytes = files[SAVES_MANIFEST_NAME]
+  if (!manifestBytes) throw new BackupError('INVALID_FILE', '备份缺少 manifest.json')
+  let manifest: BackupManifest
+  try {
+    manifest = JSON.parse(strFromU8(manifestBytes)) as BackupManifest
+  } catch {
+    throw new BackupError('INVALID_FILE', 'manifest.json 解析失败')
+  }
+  if (manifest.format !== SAVES_FORMAT)
+    throw new BackupError('INVALID_FILE', '不是 FC Arcade 存档备份文件')
+  if (manifest.version > BACKUP_FORMAT_VERSION)
+    throw new BackupError(
+      'UNSUPPORTED_VERSION',
+      `备份版本 v${manifest.version} 高于当前支持的最高版本 v${BACKUP_FORMAT_VERSION}`,
+    )
+
+  return {
+    manifest,
+    games: 0,
+    roms: 0,
+    covers: 0,
+    saveStates: manifest.counts.saveStates,
+    sessions: 0,
+    crcLearn: 0,
+    settings: false,
+    sampleTitles: [],
+  }
+}
+
 /* ------------------------------- 预览 ------------------------------- */
 
 export interface PreviewOptions {

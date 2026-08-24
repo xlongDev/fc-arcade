@@ -11,7 +11,14 @@ import type { GameRecord } from '@/types/game'
 import type { CoverRow, RomRow, SaveStateRow, SessionRow } from '@/types/storage'
 
 import { clearAllData, db } from '../db'
-import { exportBackup, importBackup, previewBackup } from '../backup'
+import {
+  exportBackup,
+  exportSaveStates,
+  importBackup,
+  importSaveStates,
+  previewBackup,
+  previewSaveStatesBackup,
+} from '../backup'
 
 const gameSeed: GameRecord = {
   id: 'game-测试-1',
@@ -179,6 +186,65 @@ describe('backup round-trip', () => {
     })
 
     const summary = await importBackup(blob, { mode: 'merge' })
+    expect(summary.saveStates).toBe(1)
+
+    const localSave = await db.saveStates.get('save-本地-2')
+    expect(localSave?.label).toBe('本地存档')
+
+    const restoredSave = await db.saveStates.get('save-测试-1')
+    expect(restoredSave?.label).toBe('中文存档标签')
+  })
+})
+
+describe('save states backup only', () => {
+  beforeEach(async () => {
+    await clearAllData()
+  })
+
+  it('单独导出存档并预览统计', async () => {
+    await seedDatabase()
+
+    const blob = await exportSaveStates()
+    expect(blob.size).toBeGreaterThan(0)
+
+    const preview = await previewSaveStatesBackup(blob)
+    expect(preview.manifest.format).toBe('fc-arcade-saves')
+    expect(preview.saveStates).toBe(1)
+    expect(preview.games).toBe(0)
+    expect(preview.roms).toBe(0)
+    expect(preview.covers).toBe(0)
+  })
+
+  it('单独导入存档后恢复数据', async () => {
+    await seedDatabase()
+    const blob = await exportSaveStates()
+
+    await db.saveStates.clear()
+    expect(await db.saveStates.count()).toBe(0)
+
+    const summary = await importSaveStates(blob, { mode: 'replace' })
+    expect(summary.saveStates).toBe(1)
+    expect(summary.errors).toEqual([])
+
+    const restoredSave = await db.saveStates.get('save-测试-1')
+    expect(restoredSave?.slot).toBe(0)
+    expect(restoredSave?.label).toBe('中文存档标签')
+    expect(await arraysEqual(restoredSave?.blob ?? null, saveStateSeed.blob)).toBe(true)
+    expect(await arraysEqual(restoredSave?.thumb ?? null, saveStateSeed.thumb)).toBe(true)
+  })
+
+  it('merge 模式保留本机已有存档', async () => {
+    await seedDatabase()
+    const blob = await exportSaveStates()
+
+    await db.saveStates.put({
+      ...saveStateSeed,
+      id: 'save-本地-2',
+      slot: 1,
+      label: '本地存档',
+    })
+
+    const summary = await importSaveStates(blob, { mode: 'merge' })
     expect(summary.saveStates).toBe(1)
 
     const localSave = await db.saveStates.get('save-本地-2')

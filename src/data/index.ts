@@ -16,9 +16,13 @@ export {
   BACKUP_EXTENSION,
   BACKUP_FORMAT_VERSION,
   downloadBackup,
+  downloadSaveStatesBackup,
   exportBackup,
+  exportSaveStates,
   importBackup,
+  importSaveStates,
   previewBackup,
+  previewSaveStatesBackup,
 } from './backup'
 export type {
   BackupPreview,
