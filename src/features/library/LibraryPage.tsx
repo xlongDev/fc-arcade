@@ -100,6 +100,7 @@ export function LibraryPage() {
       onPlay: actions.play,
       onDetail: (game) => setDetailId(game.id),
       onDelete: (game) => setPendingDelete([game]),
+      onExportSaves: (game) => void actions.exportSaves(game),
       onToggleFavorite: (game) => void actions.toggleFavorite(game),
       onToggleSelect: (game) => toggleSelect(game.id),
     }),

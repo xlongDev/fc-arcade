@@ -2,7 +2,7 @@ import type { KeyboardEvent, MouseEvent } from 'react'
 import { m } from 'motion/react'
 
 import { Badge, IconButton } from '@/components/ui'
-import { IconEdit, IconPlay, IconTrash } from '@/components/icons'
+import { IconEdit, IconExport, IconPlay, IconTrash } from '@/components/icons'
 import { displaySubtitle, displayTitle } from '@/features/common/lib/gameDisplay'
 import { SPRING } from '@/features/common/motion'
 import { cn } from '@/lib/cn'
@@ -116,6 +116,14 @@ export function GameRow({ game, actions, animate, selected, selectionMode }: Gam
           onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onDetail(game))}
         >
           <IconEdit size={14} />
+        </IconButton>
+        <IconButton
+          label="导出该游戏存档"
+          size="sm"
+          variant="ghost"
+          onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onExportSaves(game))}
+        >
+          <IconExport size={14} />
         </IconButton>
         <IconButton
           label="删除游戏"

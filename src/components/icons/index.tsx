@@ -266,6 +266,18 @@ export function IconDownload(props: IconProps) {
   )
 }
 
+/** 软盘 + 向外箭头：导出存档 */
+export function IconExport(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M4 4h13l3 3v13H4V4Z" />
+      <path d="M8 4h7v6H8V4Z" />
+      <path d="M14 11l5-5" />
+      <path d="M15 6h4v4" />
+    </Svg>
+  )
+}
+
 export function IconCamera(props: IconProps) {
   return (
     <Svg {...props}>

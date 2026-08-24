@@ -1,7 +1,7 @@
 import type { MouseEvent } from 'react'
 
 import { IconButton } from '@/components/ui'
-import { IconEdit, IconPlay, IconTrash } from '@/components/icons'
+import { IconEdit, IconExport, IconPlay, IconTrash } from '@/components/icons'
 import type { GameView } from '@/types/game'
 
 import type { GameActions } from '../types'
@@ -44,6 +44,14 @@ export function CardOverlay({ game, actions, compact = false }: Props) {
             onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onDetail(game))}
           >
             <IconEdit size={14} />
+          </IconButton>
+          <IconButton
+            label="导出该游戏存档"
+            size="sm"
+            variant="glass"
+            onClick={(event: MouseEvent) => stopPropagation(event, () => actions.onExportSaves(game))}
+          >
+            <IconExport size={14} />
           </IconButton>
           <IconButton
             label="删除游戏"

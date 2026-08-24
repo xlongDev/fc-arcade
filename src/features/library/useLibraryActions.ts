@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router'
 
-import { gameDao } from '@/data'
+import { downloadSaveStatesByGame, gameDao } from '@/data'
 import { useToast } from '@/components/ui'
 import { notifyLibraryChanged } from '@/features/common/lib/storageEvents'
 import { useLibraryStore } from '@/store'
@@ -14,6 +14,7 @@ interface LibraryActionsResult {
   toggleFavorite: (game: GameView) => Promise<void>
   favoriteMany: (ids: string[], favorite: boolean) => Promise<void>
   removeMany: (ids: string[]) => Promise<void>
+  exportSaves: (game: GameView) => Promise<void>
 }
 
 /** 游戏库里所有会写库的动作。集中在这里，保证每次写完都发一次刷新广播。 */
@@ -84,7 +85,24 @@ export function useLibraryActions(): LibraryActionsResult {
     [clearSelection, toast],
   )
 
-  return { busy, play, toggleFavorite, favoriteMany, removeMany }
+  const exportSaves = useCallback(
+    async (game: GameView) => {
+      try {
+        await downloadSaveStatesByGame(game.id, displayTitle(game))
+        toast({ variant: 'success', title: `《${displayTitle(game)}》存档已导出` })
+      } catch (error) {
+        console.error('[fc-arcade] 导出游戏存档失败', error)
+        toast({
+          variant: 'error',
+          title: '导出存档失败',
+          description: error instanceof Error ? error.message : undefined,
+        })
+      }
+    },
+    [toast],
+  )
+
+  return { busy, play, toggleFavorite, favoriteMany, removeMany, exportSaves }
 }
 
 /** 删除确认里用到的提示文案 */

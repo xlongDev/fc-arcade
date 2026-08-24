@@ -7,6 +7,7 @@ export interface GameActions {
   onPlay: (game: GameView) => void
   onDetail: (game: GameView) => void
   onDelete: (game: GameView) => void
+  onExportSaves: (game: GameView) => void
   onToggleFavorite: (game: GameView) => void
   onToggleSelect: (game: GameView) => void
 }

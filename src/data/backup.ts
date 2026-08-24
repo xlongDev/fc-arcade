@@ -35,6 +35,7 @@ import type { GameRecord } from '@/types/game'
 import { SETTINGS_STORAGE_KEY } from '@/config/defaults'
 
 import { crcLearnDao, db, gameDao } from './index'
+import { saveStateDao } from './dao'
 import { clearAllData } from './db'
 import { withDerivedFields } from './dao'
 
@@ -473,14 +474,12 @@ export async function importBackup(
 const SAVES_FORMAT = 'fc-arcade-saves' as const
 const SAVES_MANIFEST_NAME = 'manifest.json'
 
-export async function exportSaveStates(options: ExportOptions = {}): Promise<Blob> {
+async function buildSaveStatesArchive(
+  saveStates: SaveStateRow[],
+  options: ExportOptions = {},
+): Promise<Blob> {
   const { onProgress, signal } = options
   throwIfAborted(signal)
-
-  onProgress?.({ stage: 'reading', label: '读取存档…', processed: 0, total: 1 })
-  const saveStates = await db.saveStates.toArray()
-  throwIfAborted(signal)
-  onProgress?.({ stage: 'reading', label: '读取完成', processed: 1, total: 1 })
 
   const { strToU8, zipSync } = await getFflate()
 
@@ -542,6 +541,37 @@ export async function exportSaveStates(options: ExportOptions = {}): Promise<Blo
   return new Blob([zipped], { type: BACKUP_MIME })
 }
 
+export async function exportSaveStates(options: ExportOptions = {}): Promise<Blob> {
+  const { onProgress, signal } = options
+  throwIfAborted(signal)
+
+  onProgress?.({ stage: 'reading', label: '读取存档…', processed: 0, total: 1 })
+  const saveStates = await db.saveStates.toArray()
+  throwIfAborted(signal)
+  onProgress?.({ stage: 'reading', label: '读取完成', processed: 1, total: 1 })
+
+  return buildSaveStatesArchive(saveStates, options)
+}
+
+export async function exportSaveStatesByGame(
+  gameId: string,
+  options: ExportOptions = {},
+): Promise<Blob> {
+  const { onProgress, signal } = options
+  throwIfAborted(signal)
+
+  onProgress?.({ stage: 'reading', label: '读取存档…', processed: 0, total: 1 })
+  const saveStates = await saveStateDao.listByGame(gameId)
+  throwIfAborted(signal)
+  onProgress?.({ stage: 'reading', label: '读取完成', processed: 1, total: 1 })
+
+  if (saveStates.length === 0) {
+    throw new Error('该游戏没有存档')
+  }
+
+  return buildSaveStatesArchive(saveStates, options)
+}
+
 export async function downloadSaveStatesBackup(options: ExportOptions = {}): Promise<void> {
   const blob = await exportSaveStates(options)
   const stamp = new Date().toISOString().slice(0, 10)
@@ -549,6 +579,24 @@ export async function downloadSaveStatesBackup(options: ExportOptions = {}): Pro
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = `fc-arcade-saves-${stamp}.${BACKUP_EXTENSION}`
+  document.body.appendChild(anchor)
+  anchor.click()
+  anchor.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+export async function downloadSaveStatesByGame(
+  gameId: string,
+  title?: string,
+  options: ExportOptions = {},
+): Promise<void> {
+  const blob = await exportSaveStatesByGame(gameId, options)
+  const stamp = new Date().toISOString().slice(0, 10)
+  const safeTitle = title ? title.replace(/[/\\?%*:|"<>]/g, '_') : gameId.slice(0, 8)
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `fc-arcade-saves-${safeTitle}-${stamp}.${BACKUP_EXTENSION}`
   document.body.appendChild(anchor)
   anchor.click()
   anchor.remove()

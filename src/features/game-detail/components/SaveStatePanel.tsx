@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { Button, EmptyState, Spinner, useToast } from '@/components/ui'
-import { IconClock, IconTrash } from '@/components/icons'
-import { saveStateDao } from '@/data'
+import { IconClock, IconExport, IconTrash } from '@/components/icons'
+import { downloadSaveStatesByGame, saveStateDao } from '@/data'
 import { BlobImage } from '@/features/common/components/BlobImage'
 import { notifyStorageChanged } from '@/features/common/lib/storageEvents'
 import { formatBytes, formatRelativeTime } from '@/lib/format'
@@ -16,13 +16,15 @@ function slotLabel(row: SaveStateRow): string {
 
 interface Props {
   gameId: string
+  title?: string
 }
 
-/** 详情页的存档管理：只读列表 + 删除。存 / 读档在播放器里做。 */
-export function SaveStatePanel({ gameId }: Props) {
+/** 详情页的存档管理：只读列表 + 删除 + 导出。存 / 读档在播放器里做。 */
+export function SaveStatePanel({ gameId, title }: Props) {
   const [rows, setRows] = useState<SaveStateRow[]>([])
   const [loading, setLoading] = useState(true)
   const [removing, setRemoving] = useState<string | null>(null)
+  const [exporting, setExporting] = useState(false)
   const { toast } = useToast()
 
   const load = useCallback(() => {
@@ -79,6 +81,23 @@ export function SaveStatePanel({ gameId }: Props) {
     }
   }
 
+  const exportAll = async () => {
+    setExporting(true)
+    try {
+      await downloadSaveStatesByGame(gameId, title)
+      toast({ variant: 'success', title: `《${title ?? '该游戏'}》存档已导出` })
+    } catch (cause) {
+      console.error('[fc-arcade] 导出游戏存档失败', cause)
+      toast({
+        variant: 'error',
+        title: '导出存档失败',
+        description: cause instanceof Error ? cause.message : undefined,
+      })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-40 items-center justify-center">
@@ -99,6 +118,20 @@ export function SaveStatePanel({ gameId }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-[var(--color-text-muted)]">
+          共 {rows.length} 个存档
+        </p>
+        <Button
+          variant="secondary"
+          size="sm"
+          loading={exporting}
+          icon={<IconExport size={14} />}
+          onClick={() => void exportAll()}
+        >
+          导出全部存档
+        </Button>
+      </div>
       <ul className="flex flex-col gap-2">
         {rows.map((row) => (
           <li

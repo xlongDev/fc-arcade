@@ -221,7 +221,7 @@ export function GameDetailDialog({ game, open, onClose }: Props) {
                 </div>
               </>
             ) : tab === 'saves' ? (
-              <SaveStatePanel gameId={game.id} />
+              <SaveStatePanel gameId={game.id} title={title} />
             ) : (
               <RomInfoPanel game={game} />
             )}

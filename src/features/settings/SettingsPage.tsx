@@ -25,6 +25,7 @@ import {
 import {
   IconChip,
   IconDownload,
+  IconExport,
   IconGamepad,
   IconKeyboard,
   IconPalette,
@@ -799,7 +800,7 @@ function DataSection() {
         <Row label="导出存档" description="仅包含所有即时存档与自动存档，不含 ROM 与游戏记录">
           <Button
             variant="secondary"
-            icon={<IconDownload size={15} />}
+            icon={<IconExport size={15} />}
             onClick={() => void handleExportSaves()}
             disabled={mode !== null}
           >
