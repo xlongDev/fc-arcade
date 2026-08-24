@@ -45,6 +45,9 @@ export type { NumberInputProps } from './NumberInput'
 export { Popover } from './Popover'
 export type { PopoverProps } from './Popover'
 
+export { ProductTour } from './ProductTour'
+export type { ProductTourProps, TourStep } from './ProductTour'
+
 export { ProgressBar } from './ProgressBar'
 export type { ProgressBarProps, ProgressVariant } from './ProgressBar'
 

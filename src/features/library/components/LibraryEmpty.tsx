@@ -1,11 +1,25 @@
+import { useState } from 'react'
+
 import { Button, EmptyState } from '@/components/ui'
-import { IconCartridge, IconSearch, IconUpload } from '@/components/icons'
+import { IconCartridge, IconInfo, IconSearch, IconUpload } from '@/components/icons'
 import { useImport } from '@/features/import/ImportContext'
 import { useLibraryStore } from '@/store'
+
+import { LibraryTour, TOUR_STORAGE_KEY } from './LibraryTour'
+
+function hasCompletedTour(): boolean {
+  if (typeof localStorage === 'undefined') return false
+  try {
+    return localStorage.getItem(TOUR_STORAGE_KEY) === 'done'
+  } catch {
+    return false
+  }
+}
 
 /** 库里一个游戏都没有时的引导页 */
 export function LibraryEmpty() {
   const { open } = useImport()
+  const [tourOpen, setTourOpen] = useState(false)
 
   return (
     <div className="flex flex-col items-center gap-6 py-16">
@@ -18,11 +32,26 @@ export function LibraryEmpty() {
         title="游戏库还是空的"
         description="从本地导入 .nes 文件就能开始玩。所有文件只保存在你自己的浏览器里，不会上传到任何服务器。"
         action={
-          <Button variant="primary" size="lg" icon={<IconUpload size={18} />} onClick={() => open()}>
-            导入 ROM 文件
-          </Button>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Button
+              id="library-import-btn"
+              variant="primary"
+              size="lg"
+              icon={<IconUpload size={18} />}
+              onClick={() => open()}
+            >
+              导入 ROM 文件
+            </Button>
+            {!hasCompletedTour() ? (
+              <Button variant="ghost" size="lg" icon={<IconInfo size={18} />} onClick={() => setTourOpen(true)}>
+                查看引导
+              </Button>
+            ) : null}
+          </div>
         }
       />
+
+      <LibraryTour autoRun open={tourOpen} onOpenChange={setTourOpen} />
 
       <p className="max-w-md text-center text-xs leading-relaxed text-[var(--color-text-faint)]">
         本站不提供、不内置、不分发任何游戏 ROM。请只导入你依法拥有的卡带备份，

@@ -50,10 +50,15 @@ export function TopNav({ showSearch }: Props) {
           </span>
         </NavLink>
 
-        <ul className="hidden items-center gap-1 md:flex">
+          <ul className="hidden items-center gap-1 md:flex">
           {NAV_ITEMS.map((item) => (
             <li key={item.to}>
-              <NavLink to={item.to} end={item.end} className="relative block px-3 py-1.5 text-sm">
+              <NavLink
+                id={item.to === '/settings' ? 'settings-nav-link' : undefined}
+                to={item.to}
+                end={item.end}
+                className="relative block px-3 py-1.5 text-sm"
+              >
                 {({ isActive }) => (
                   <>
                     {isActive ? (
@@ -88,6 +93,7 @@ export function TopNav({ showSearch }: Props) {
           <StorageMeter className="hidden lg:flex" />
 
           <Button
+            id="topnav-import-btn"
             variant="primary"
             size="sm"
             icon={<IconUpload size={15} />}
@@ -99,6 +105,7 @@ export function TopNav({ showSearch }: Props) {
 
           <Tooltip content={mode === 'dark' ? '切换到浅色' : '切换到深色'} side="bottom">
             <IconButton
+              id="theme-toggle-btn"
               label={mode === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
               variant="glass"
               size="sm"

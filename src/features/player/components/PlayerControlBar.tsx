@@ -151,6 +151,7 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
             label={running ? '暂停' : '继续'}
             variant="ghost"
             size="lg"
+            id="player-pause-btn"
             onClick={onTogglePause}
           >
             {running ? <IconPause size={20} /> : <IconPlay size={20} />}
@@ -164,7 +165,7 @@ export const PlayerControlBar = forwardRef<HTMLDivElement, Props>(function Playe
           <IconButton label="截图" variant="ghost" onClick={onScreenshot}>
             <IconCamera size={18} />
           </IconButton>
-          <IconButton label="键位设置" variant="ghost" onClick={onOpenKeyboard}>
+          <IconButton label="键位设置" variant="ghost" id="player-keyboard-btn" onClick={onOpenKeyboard}>
             <IconKeyboard size={18} />
           </IconButton>
           {showTouchToggle ? (

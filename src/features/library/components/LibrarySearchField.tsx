@@ -37,7 +37,7 @@ export function LibrarySearchField({ className, placeholder = '搜索游戏…' 
   }, [keyword])
 
   return (
-    <div className={cn('min-w-0', className)}>
+    <div id="library-search-field" className={cn('min-w-0', className)}>
       <Input
         value={local}
         onChange={setLocal}

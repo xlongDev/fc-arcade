@@ -25,6 +25,7 @@ import { PlayerStatusOverlay } from './components/PlayerStatusOverlay'
 import { KeyboardMappingPanel } from './components/KeyboardMappingPanel'
 import { PlayerTopBar } from './components/PlayerTopBar'
 import { SaveSlotPanel } from './components/SaveSlotPanel'
+import { FirstGameTour } from './components/FirstGameTour'
 import { useAutoHideControls } from './useAutoHideControls'
 import { useEmulatorSession } from './useEmulatorSession'
 import { useFullscreen } from './useFullscreen'
@@ -327,6 +328,8 @@ export function PlayerPage() {
           onChange={handleKeyboardChange}
         />
       </Sheet>
+
+      <FirstGameTour active={!loadingGame && !missing && game !== null} />
     </div>
   )
 }
