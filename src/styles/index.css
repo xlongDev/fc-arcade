@@ -51,6 +51,9 @@
 @property --noise-opacity { syntax: '<number>'; inherits: true; initial-value: 0.04; }
 @property --glow { syntax: '<number>'; inherits: true; initial-value: 0.5; }
 
+/* 主题切换「圆形揭示」反向动画用的 mask 半径变量，必须注册才能被 transition 平滑插值。 */
+@property --reveal-r { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
 @theme {
   /* ---- 颜色 ---- */
   --color-bg: #14100f;

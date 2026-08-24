@@ -89,13 +89,14 @@ pnpm install
 # 本地开发（默认 http://localhost:5173，host 已开，可局域网访问）
 pnpm dev
 
-# 类型检查 + 代码质量
+# 类型检查 + 代码质量（CI 在 PR / main 上自动跑这一组）
 pnpm typecheck   # tsc --noEmit
 pnpm lint        # oxlint src scripts
-pnpm check       # typecheck && lint
+pnpm test        # vitest run
+pnpm check       # typecheck && lint && test
 
-# 生产构建
-pnpm build
+# 生产构建（GitHub Pages 子路径部署，务必带 base）
+pnpm build -- --base /fc-arcade/
 
 # 构建产物体检（必跑：首屏体积预算、字体存在、fceumm 内核未被静态打进首屏等）
 pnpm verify:dist
@@ -105,6 +106,7 @@ pnpm preview
 ```
 
 > Node 版本：构建脚本依赖 Node 20+（Vite 8 要求）。键位映射用 `event.code`，输入法/非 QWERTY 布局无碍。
+> 本地 dev（`pnpm dev`）不需带 base；只有构建产物要托管在 `https://xlongdev.github.io/fc-arcade/` 时才需要 `--base /fc-arcade/`（CI 已内置）。
 
 ---
 
@@ -118,7 +120,7 @@ pnpm preview
 
 ### 主题系统（`src/theme`）
 
-主题是一组 CSS 变量集合（颜色/圆角/阴影/缓动）。`ThemeProvider` 在应用根部注入，切换时先写 `data-theme` 再用 View Transitions / 过渡动画平滑切换。偏好存 localStorage，键 `fc-arcade-settings`，`index.html` 内有防闪白内联脚本在首屏绘制前就把主题套上。
+主题是一组 CSS 变量集合（颜色/圆角/阴影/缓动）。`ThemeProvider` 在应用根部注入，切换时先写 `data-theme`，再用 **`@property` 轻量过渡**（着色器级 CSS 变量动画，无快照抖动）平滑切换；不支持 `@property` 的浏览器直接切换。偏好存 localStorage，键 `fc-arcade-settings`，`index.html` 内有防闪白内联脚本在首屏绘制前就把主题套上。
 
 > 组件里**禁止写死十六进制颜色**——一律用设计令牌（`bg-glass` / `text-accent` 等），否则换主题时颜色会卡住。
 
@@ -178,6 +180,14 @@ pnpm preview
 - `src/types/**` 是全项目契约，**只读不改**；跨模块接口先对齐类型再写实现。
 - 新增 UI 走 `src/components/ui`，图标走 `src/components/icons`，保持像素硬边风（stroke `square`/`miter`）。
 - 改主题相关视觉一律用令牌，不写死颜色。
-- 提交前跑 `pnpm check && pnpm build && pnpm verify:dist`。
+- 提交前跑 `pnpm check && pnpm build -- --base /fc-arcade/ && pnpm verify:dist`。
 
 详见 [DEPLOY.md](./DEPLOY.md) 了解部署与构建守卫细节。
+
+---
+
+## 持续集成与部署
+
+- **质量门禁（CI）**：`.github/workflows/ci.yml` 在 `push` 到 `main` 与 `pull_request` 时运行 `pnpm typecheck` → `pnpm lint` → `pnpm test`（使用 pnpm 11 + Node 22）。
+- **自动部署**：`.github/workflows/deploy-pages.yml` 在 `push` 到 `main` 时构建（`pnpm build --base /fc-arcade/`）并发布到 GitHub Pages，线上地址 **https://xlongdev.github.io/fc-arcade/**。流程含 `verify:dist` 守卫，Pages Source 选「GitHub Actions」。
+- 本地复刻线上构建：`pnpm install && pnpm build -- --base /fc-arcade/ && pnpm verify:dist`。

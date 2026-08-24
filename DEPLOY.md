@@ -92,7 +92,7 @@ COPY --from=build /app/dist /usr/share/nginx/html
 | AudioContext（RetroArch 内部创建） | NES 音频输出 | 不支持则无音 |
 | Gamepad API | 手柄输入 | 无则仅键盘/触摸 |
 | IndexedDB | 游戏/ROM/存档存储 | 无则站点不可用 |
-| View Transitions API | 主题切换过渡动画 | 无则直接切换 |
+| `@property` CSS 变量过渡 | 主题切换过渡动画 | 不支持则直接切换（无动画） |
 | pointer events / touch-action | 虚拟手柄 | 触屏设备 |
 
 `vite.config.ts` 中 `build.target: 'es2022'`、`cssTarget: 'chrome111'`。

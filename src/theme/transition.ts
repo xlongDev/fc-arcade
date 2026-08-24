@@ -1,19 +1,21 @@
 /**
- * 主题切换的视觉过渡：圆形揭示（circular reveal）。
+ * 主题切换的视觉过渡：圆形揭示（circular reveal），从点击点向全屏扩散。
  *
  * 保留「圆形揭示真实界面」的观感，但彻底避开 View Transitions 的整页位图快照
  * （那才是复杂页面「卡顿一下 + 不流畅」的根因），改用一个纯 DOM overlay：
  *
  *   1. 读取当前 body 的实际渲染背景色（旧主题真实底色）作为遮罩色。
- *   2. 铺一个 fixed 全屏 overlay，clip-path = circle(全覆盖) 盖住整屏（旧底色）。
+ *   2. 铺一个 fixed 全屏 overlay，背景 = 旧主题底色，盖住整屏。
+ *      overlay 的 mask-image 初始为「点击点半径 0 的透明圆」，圆外黑色 = 遮罩可见。
  *   3. 立即 apply() 切换主题到新主题——此时新主题已被 overlay 遮住，用户无感跳变。
- *   4. 下一帧把 overlay 的 clip-path 收到 circle(0)（收缩到点击点）。
- *      收缩过程中，未被遮罩覆盖的区域露出「新主题的真实 UI」，
- *      于是旧主题像被吸进点击点一样退去，新界面原地呈现，圆形揭示真实界面。
+ *   4. 下一帧把 mask 的透明圆半径扩大到 maxRadius，透明圆从点击点向外扩散。
+ *      扩散过程中，透明圆区域内的 overlay 被「镂穿」，露出「新主题的真实 UI」，
+ *      于是新界面像从点击点喷涌出来一样向外铺开，圆形揭示真实界面。
  *   5. 动画结束后移除 overlay。
  *
- * 全程只动一个 div 的 clip-path（合成器层操作，零位图、零重绘），
- * 比 VT 的整页快照流畅得多。prefers-reduced-motion 下跳过过渡直接换。
+ * 全程只动一个 div 的 mask-image / 一个 CSS 自定义属性（由 @property 注册，
+ * 可被 transition 平滑插值），合成器层操作，零位图、零重绘，比 VT 的整页快照
+ * 流畅得多。prefers-reduced-motion 下跳过过渡直接换。
  */
 
 export interface TransitionOrigin {
@@ -88,20 +90,25 @@ export function runThemeTransition(
   overlay.style.background = bg
   overlay.style.zIndex = '2147483646'
   overlay.style.pointerEvents = 'none'
-  overlay.style.willChange = 'clip-path'
-  overlay.style.clipPath = `circle(${radius}px at ${x}px ${y}px)`
+  overlay.style.willChange = 'mask-image, -webkit-mask-image'
+
+  // 初始：透明圆半径 0，圆外黑色 → 遮罩全覆盖旧主题。
+  overlay.style.setProperty('--reveal-r', '0px')
+  const mask = `radial-gradient(circle at ${x}px ${y}px, transparent var(--reveal-r), black var(--reveal-r))`
+  overlay.style.maskImage = mask
+  overlay.style.webkitMaskImage = mask
   document.body.appendChild(overlay)
 
-  // 强制一次 reflow，让起始 clip-path 生效，避免被浏览器合并掉动画首帧
+  // 强制一次 reflow，让起始 mask 生效，避免被浏览器合并掉动画首帧
   void overlay.getBoundingClientRect()
 
   // 先切换主题（被 overlay 遮住，用户无感）
   apply()
 
-  // 下一帧再收起遮罩，露出新主题真实 UI
+  // 下一帧再扩散遮罩的透明圆，让新主题真实 UI 从点击点向外揭示
   requestAnimationFrame(() => {
-    overlay.style.transition = `clip-path ${DEFAULT_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1)`
-    overlay.style.clipPath = `circle(0px at ${x}px ${y}px)`
+    overlay.style.transition = `--reveal-r ${DEFAULT_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1)`
+    overlay.style.setProperty('--reveal-r', `${radius}px`)
   })
 
   let done = false
