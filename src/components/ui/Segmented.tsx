@@ -138,7 +138,8 @@ export function Segmented<T extends string>({
             onClick={() => onChange(option.value as T)}
             className={cn(
               'focus-ring relative flex h-full min-w-0 items-center justify-center',
-              'transition-colors duration-200 ease-snap disabled:pointer-events-none disabled:opacity-40',
+              'transition-all duration-200 ease-snap disabled:pointer-events-none disabled:opacity-40',
+              'active:scale-[0.98]',
               style.item,
               fullWidth && 'flex-1',
               active ? 'text-on-accent' : 'text-muted hover:text-text',
@@ -150,15 +151,22 @@ export function Segmented<T extends string>({
                 transition={
                   reduce
                     ? { duration: 0 }
-                    : { type: 'spring', stiffness: 520, damping: 38, mass: 0.6 }
+                    : { type: 'spring', stiffness: 460, damping: 20, mass: 0.7 }
                 }
-                className={cn('absolute inset-0 bg-accent', style.pill)}
+                className={cn(
+                  'absolute inset-0 bg-accent shadow-[0_4px_14px_-4px_rgba(0,0,0,0.35)] ring-1 ring-inset ring-white/10',
+                  style.pill,
+                )}
               />
             ) : null}
             {option.icon ? (
               <span className="relative flex shrink-0 items-center">{option.icon}</span>
             ) : null}
-            {iconOnly ? null : <span className="relative truncate">{option.label}</span>}
+            {iconOnly ? null : (
+              <span className={cn('relative', fullWidth ? 'truncate' : 'whitespace-nowrap')}>
+                {option.label}
+              </span>
+            )}
           </button>
         )
       })}

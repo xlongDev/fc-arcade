@@ -1,17 +1,45 @@
 import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties, Ref } from 'react'
+import { AnimatePresence, m } from 'motion/react'
 
+import { useReduceMotion } from '@/features/common/hooks/useReduceMotion'
 import { cn } from '@/lib/cn'
 import { NES_HEIGHT, NES_WIDTH } from '@/types/emulator'
 import type { AspectRatio, ScreenFilter } from '@/types/ui'
 
-/** 滤镜叠加层。纯 CSS，不占 GPU 纹理，切换零成本。 */
-const FILTER_CLASS: Readonly<Record<ScreenFilter, string>> = {
-  none: '',
-  scanline:
-    'bg-[repeating-linear-gradient(to_bottom,rgba(0,0,0,0.28)_0px,rgba(0,0,0,0.28)_1px,transparent_1px,transparent_3px)]',
-  crt: 'bg-[repeating-linear-gradient(to_bottom,rgba(0,0,0,0.32)_0px,rgba(0,0,0,0.32)_1px,transparent_1px,transparent_3px)] shadow-[inset_0_0_120px_rgba(0,0,0,0.65)]',
-  lcd: 'bg-[repeating-linear-gradient(to_right,rgba(0,0,0,0.16)_0px,rgba(0,0,0,0.16)_1px,transparent_1px,transparent_1px,transparent_3px)] opacity-80',
+/**
+ * 屏幕滤镜叠加层样式。
+ * 用内联 style 写多层渐变比 Tailwind 任意值清晰，也便于调透明度/间距。
+ */
+const FILTER_STYLE: Readonly<Record<ScreenFilter, CSSProperties>> = {
+  none: {},
+  scanline: {
+    background: `repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.42) 0px,
+      rgba(0, 0, 0, 0.42) 1px,
+      transparent 1px,
+      transparent 4px
+    )`,
+  },
+  crt: {
+    background: `radial-gradient(ellipse at center, rgba(0,0,0,0) 0%, rgba(0,0,0,0.55) 85%),
+      repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.35) 0px,
+        rgba(0, 0, 0, 0.35) 1px,
+        transparent 1px,
+        transparent 3px
+      )`,
+    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.75)',
+  },
+  lcd: {
+    background: `
+      repeating-linear-gradient(to right, rgba(0,0,0,0.24) 0px, rgba(0,0,0,0.24) 1px, transparent 1px, transparent 3px),
+      repeating-linear-gradient(to bottom, rgba(0,0,0,0.24) 0px, rgba(0,0,0,0.24) 1px, transparent 1px, transparent 3px)
+    `,
+    opacity: 0.9,
+  },
 }
 
 interface Size {
@@ -96,6 +124,7 @@ export function EmulatorScreen({
   fullscreen = false,
   onActivate,
 }: Props) {
+  const reduceMotion = useReduceMotion()
   const boxRef = useRef<HTMLDivElement>(null)
   // 初始 = NES visible 256:224（不带 DPR），让 fceumm 启动时看到的 canvas CSS 已经是
   // NES 比例 → framebuffer = 256×224（1.143），不会被后续 ResizeObserver 覆盖。
@@ -203,12 +232,39 @@ export function EmulatorScreen({
             ref={canvasRef}
             className="block size-full [image-rendering:pixelated]"
           />
-          {filter === 'none' ? null : (
-            <div
-              aria-hidden
-              className={cn('pointer-events-none absolute inset-0', FILTER_CLASS[filter])}
-            />
-          )}
+          <AnimatePresence initial={false} mode="popLayout">
+            {filter === 'none' ? null : (
+              <m.div
+                key={filter}
+                aria-hidden
+                initial={{ opacity: 0, filter: 'blur(6px)' }}
+                animate={{ opacity: 1, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, filter: 'blur(6px)' }}
+                transition={
+                  reduceMotion ? { duration: 0 } : { duration: 0.35, ease: 'easeInOut' }
+                }
+                className="pointer-events-none absolute inset-0"
+                style={FILTER_STYLE[filter]}
+              />
+            )}
+          </AnimatePresence>
+          {/* 切换滤镜时一道扫描光自上而下扫过，强化“滤镜已切换”的感知 */}
+          <AnimatePresence initial={false}>
+            {filter !== 'none' ? (
+              <m.div
+                key={`sweep-${filter}`}
+                aria-hidden
+                initial={{ opacity: 0.55, top: '-20%' }}
+                animate={{ opacity: 0, top: '120%' }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.5, ease: 'easeInOut' }}
+                className="pointer-events-none absolute inset-x-0 h-1/3"
+                style={{
+                  background:
+                    'linear-gradient(to bottom, transparent, rgba(255,255,255,0.18), transparent)',
+                }}
+              />
+            ) : null}
+          </AnimatePresence>
           <div
             aria-hidden
             className={cn(

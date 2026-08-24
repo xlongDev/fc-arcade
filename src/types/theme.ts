@@ -29,6 +29,14 @@ export type ThemeId =
   | 'souls'
   | 'dos'
   | 'c64'
+  | 'duck-hunt'
+  | 'bubble-bobble'
+  | 'punch-out'
+  | 'excitebike'
+  | 'balloon-fight'
+  | 'dr-mario'
+  | 'tecmo-bowl'
+  | 'kid-icarus'
 
 export const THEME_IDS: readonly ThemeId[] = [
   'famicom',
@@ -55,6 +63,14 @@ export const THEME_IDS: readonly ThemeId[] = [
   'souls',
   'dos',
   'c64',
+  'duck-hunt',
+  'bubble-bobble',
+  'punch-out',
+  'excitebike',
+  'balloon-fight',
+  'dr-mario',
+  'tecmo-bowl',
+  'kid-icarus',
 ] as const
 
 export type ColorMode = 'light' | 'dark'

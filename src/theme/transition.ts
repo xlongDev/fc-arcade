@@ -23,7 +23,18 @@ export interface TransitionOrigin {
   y: number
 }
 
-const DEFAULT_DURATION = 760
+const DEFAULT_DURATION = 950
+
+/**
+ * 全程单一缓动：easeInOutSine。
+ * 开场合收尾都极柔（正弦曲线，两端斜率为 0），中段匀速推进，
+ * 整段速度连续、无折点、无停顿，是最「丝滑」的扩散观感。
+ * 不再分段拼接（分段会在衔接点产生速度跳变 → 视觉停顿感），
+ * 改用一条曲线贯穿始终。
+ */
+function easeInOutSine(t: number): number {
+  return -(Math.cos(Math.PI * t) - 1) / 2
+}
 
 /**
  * 取当前主题的真实渲染背景色，作为遮罩色。
@@ -92,11 +103,15 @@ export function runThemeTransition(
   overlay.style.pointerEvents = 'none'
   overlay.style.willChange = 'mask-image, -webkit-mask-image'
 
-  // 初始：透明圆半径 0，圆外黑色 → 遮罩全覆盖旧主题。
-  overlay.style.setProperty('--reveal-r', '0px')
-  const mask = `radial-gradient(circle at ${x}px ${y}px, transparent var(--reveal-r), black var(--reveal-r))`
-  overlay.style.maskImage = mask
-  overlay.style.webkitMaskImage = mask
+  // 每帧直接重设 mask-image（含最新半径），不依赖 @property 对 var 的过渡插值——
+  // 某些浏览器在 mask-image 里的自定义属性变化后不会重新解析渐变，会导致瞬间跳变。
+  // 用 rAF 手动插值半径，任意浏览器都稳定可见地扩散。
+  const applyMask = (r: number): void => {
+    const mask = `radial-gradient(circle at ${x}px ${y}px, transparent ${r}px, black ${r}px)`
+    overlay.style.maskImage = mask
+    overlay.style.webkitMaskImage = mask
+  }
+  applyMask(0)
   document.body.appendChild(overlay)
 
   // 强制一次 reflow，让起始 mask 生效，避免被浏览器合并掉动画首帧
@@ -105,11 +120,7 @@ export function runThemeTransition(
   // 先切换主题（被 overlay 遮住，用户无感）
   apply()
 
-  // 下一帧再扩散遮罩的透明圆，让新主题真实 UI 从点击点向外揭示
-  requestAnimationFrame(() => {
-    overlay.style.transition = `--reveal-r ${DEFAULT_DURATION}ms cubic-bezier(0.65, 0, 0.35, 1)`
-    overlay.style.setProperty('--reveal-r', `${radius}px`)
-  })
+  const start = performance.now()
 
   let done = false
   const cleanup = (): void => {
@@ -117,9 +128,19 @@ export function runThemeTransition(
     done = true
     overlay.remove()
   }
-  overlay.addEventListener('transitionend', cleanup, { once: true })
-  // 兜底：若 transitionend 未触发（极端情况），超时也清理，避免遮罩残留
-  window.setTimeout(cleanup, DEFAULT_DURATION + 200)
+
+  const tick = (now: number): void => {
+    const t = Math.min(1, (now - start) / DEFAULT_DURATION)
+    // 全程单一 easeInOutSine，速度连续无折点，丝滑扩散无停顿
+    const eased = easeInOutSine(t)
+    applyMask(eased * radius)
+    if (t < 1) {
+      requestAnimationFrame(tick)
+    } else {
+      cleanup()
+    }
+  }
+  requestAnimationFrame(tick)
 }
 
 /** 从鼠标/触摸事件里取切换动画的圆心 */

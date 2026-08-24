@@ -89,7 +89,7 @@ export function NumberInput({
         disabled={disabled || value <= min}
         onClick={() => nudge(-step)}
         className={cn(
-          'focus-ring flex shrink-0 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-text disabled:opacity-35',
+          'focus-ring flex shrink-0 items-center justify-center text-muted transition-[color,background-color,transform] hover:bg-surface hover:text-text disabled:opacity-35 active:scale-90',
           style.btn,
         )}
       >
@@ -134,7 +134,7 @@ export function NumberInput({
         disabled={disabled || value >= max}
         onClick={() => nudge(step)}
         className={cn(
-          'focus-ring flex shrink-0 items-center justify-center text-muted transition-colors hover:bg-surface hover:text-text disabled:opacity-35',
+          'focus-ring flex shrink-0 items-center justify-center text-muted transition-[color,background-color,transform] hover:bg-surface hover:text-text disabled:opacity-35 active:scale-90',
           style.btn,
         )}
       >

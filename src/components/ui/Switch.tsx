@@ -39,8 +39,8 @@ export function Switch({
       onClick={() => onChange?.(!checked)}
       className={cn(
         'relative inline-flex shrink-0 items-center rounded-full border p-0.5',
-        'transition-[background-color,border-color,box-shadow] duration-200 ease-snap',
-        'focus-ring disabled:pointer-events-none disabled:opacity-45',
+        'transition-[background-color,border-color,box-shadow,transform] duration-200 ease-snap',
+        'focus-ring disabled:pointer-events-none disabled:opacity-45 active:scale-95',
         TRACK[size],
         checked ? 'border-transparent bg-accent' : 'border-border bg-surface-alt',
       )}

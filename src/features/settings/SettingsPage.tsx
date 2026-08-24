@@ -34,6 +34,7 @@ import {
   IconVolume,
 } from '@/components/icons'
 import { THEME_LIST, useTheme } from '@/theme'
+import { cn } from '@/lib/cn'
 import { useSettingsStore } from '@/store'
 import { DEFAULT_INPUT_MAPS } from '@/store'
 import { BUTTON_LABEL, NES_BUTTONS } from '@/types/input'
@@ -123,28 +124,48 @@ function AppearanceSection() {
   return (
     <Section title="外观" description="主题、明暗与游戏库默认排布">
       <div>
-        <div className="mb-2 text-sm text-text">主题</div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="mb-2 flex items-center justify-between text-sm text-text">
+          <span>主题</span>
+          <span className="text-[10px] text-text-faint">{THEME_LIST.length} 套</span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {THEME_LIST.map((theme) => {
             const active = theme.id === themeId
             return (
               <button
                 key={theme.id}
                 type="button"
+                title={theme.name}
+                aria-label={`切换到 ${theme.name} 主题`}
+                aria-pressed={active}
                 onClick={(event) => setTheme(theme.id, { x: event.clientX, y: event.clientY })}
-                className={[
-                  'focus-ring group flex flex-col gap-1.5 rounded-xl border p-2.5 text-left transition-colors duration-200',
+                className={cn(
+                  'focus-ring group relative flex flex-col gap-1 rounded-xl border p-2 text-left',
+                  'transition-all duration-200 ease-snap',
                   active
-                    ? 'border-accent bg-accent-soft'
-                    : 'border-border bg-surface hover:border-accent-line',
-                ].join(' ')}
+                    ? 'border-accent bg-accent-soft shadow-[0_0_12px_var(--color-accent)]/20'
+                    : 'border-border bg-surface hover:-translate-y-0.5 hover:border-accent-line hover:bg-surface-alt hover:shadow-md',
+                )}
               >
-                <span className="flex h-7 overflow-hidden rounded-md">
+                <span className="flex h-5 overflow-hidden rounded-md ring-1 ring-black/5 dark:ring-white/5">
                   {theme.swatch.map((color, i) => (
                     <span key={i} className="flex-1" style={{ background: color }} />
                   ))}
                 </span>
-                <span className="truncate text-xs text-text">{theme.name}</span>
+                <span
+                  className={cn(
+                    'truncate text-xs leading-tight',
+                    active ? 'font-medium text-accent' : 'text-text-muted group-hover:text-text',
+                  )}
+                >
+                  {theme.name}
+                </span>
+
+                {active ? (
+                  <span className="absolute -top-0.5 -right-0.5 flex size-2.5 items-center justify-center rounded-full bg-accent shadow-sm" aria-hidden="true">
+                    <span className="size-1 rounded-full bg-on-accent" />
+                  </span>
+                ) : null}
               </button>
             )
           })}
@@ -155,7 +176,7 @@ function AppearanceSection() {
         <Segmented
           value={modeSetting}
           onChange={(next) => setMode(next as 'light' | 'dark' | 'system')}
-          fullWidth
+          size="sm"
           options={[
             { value: 'light', label: '浅色' },
             { value: 'dark', label: '深色' },
@@ -168,7 +189,7 @@ function AppearanceSection() {
         <Segmented
           value={layout}
           onChange={(next) => setSetting('layout', next as LibraryLayout)}
-          fullWidth
+          size="sm"
           options={LIBRARY_LAYOUTS.map((value) => ({ value, label: LAYOUT_LABEL[value] }))}
         />
       </Row>
@@ -187,7 +208,7 @@ function AppearanceSection() {
         <Segmented
           value={sortDir}
           onChange={(next) => setSetting('sortDir', next as 'asc' | 'desc')}
-          fullWidth
+          size="sm"
           options={[
             { value: 'desc', label: '降序' },
             { value: 'asc', label: '升序' },
@@ -266,7 +287,7 @@ function ScreenSection() {
         <Segmented
           value={screenFilter}
           onChange={(next) => setSetting('screenFilter', next as ScreenFilter)}
-          fullWidth
+          size="sm"
           options={(['none', 'scanline', 'crt', 'lcd'] as ScreenFilter[]).map((value) => ({
             value,
             label: filterLabels[value],
@@ -282,7 +303,7 @@ function ScreenSection() {
         <Segmented
           value={aspectRatio}
           onChange={(next) => setSetting('aspectRatio', next as AspectRatio)}
-          fullWidth
+          size="sm"
           options={ASPECT_RATIOS.map((value) => ({ value, label: ASPECT_RATIO_LABEL[value] }))}
         />
       </Row>

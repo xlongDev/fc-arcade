@@ -15,8 +15,10 @@ import { fileURLToPath } from 'node:url'
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const DIST = join(ROOT, 'dist')
 
-/** 首屏 JS 的 gzip 预算。超了不算失败，但要显眼地提示。 */
-const ENTRY_GZIP_BUDGET_KB = 220
+/** 首屏 JS 的 gzip 预算。超了不算失败，但要显眼地提示。
+ *  2026-08-24 起从 220 提到 230：RootLayout 的 LazyMotion 由 domAnimation 换为 domMax
+ *  （开启 layout 投影，Segmented / 主题选择器的 layoutId 滑块才会滑动），首屏增约 13.6KB gzip。 */
+const ENTRY_GZIP_BUDGET_KB = 230
 
 const failures = []
 const warnings = []

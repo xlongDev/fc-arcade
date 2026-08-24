@@ -32,6 +32,14 @@ import { gamegear } from './themes/gamegear'
 import { souls } from './themes/souls'
 import { dos } from './themes/dos'
 import { c64 } from './themes/c64'
+import { duckHunt } from './themes/duckHunt'
+import { bubbleBobble } from './themes/bubbleBobble'
+import { punchOut } from './themes/punchOut'
+import { excitebike } from './themes/excitebike'
+import { balloonFight } from './themes/balloonFight'
+import { drMario } from './themes/drMario'
+import { tecmoBowl } from './themes/tecmoBowl'
+import { kidIcarus } from './themes/kidIcarus'
 
 export const THEMES: Record<ThemeId, ThemeDefinition> = {
   famicom,
@@ -58,6 +66,14 @@ export const THEMES: Record<ThemeId, ThemeDefinition> = {
   souls,
   dos,
   c64,
+  'duck-hunt': duckHunt,
+  'bubble-bobble': bubbleBobble,
+  'punch-out': punchOut,
+  'excitebike': excitebike,
+  'balloon-fight': balloonFight,
+  'dr-mario': drMario,
+  'tecmo-bowl': tecmoBowl,
+  'kid-icarus': kidIcarus,
 }
 
 /** 按 THEM 的顺序排列，主题选择器直接消费 */

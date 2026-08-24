@@ -1,6 +1,6 @@
 import { Suspense, useState } from 'react'
 import { useLocation, useOutlet } from 'react-router'
-import { AnimatePresence, LazyMotion, domAnimation, m } from 'motion/react'
+import { AnimatePresence, LazyMotion, domMax, m } from 'motion/react'
 
 import { Spinner } from '@/components/ui'
 import { useReduceMotion } from '@/features/common/hooks/useReduceMotion'
@@ -38,7 +38,10 @@ export function RootLayout() {
   const immersive = location.pathname.startsWith('/play/')
 
   return (
-    <LazyMotion features={domAnimation} strict>
+    // domMax 含 layout 投影（Segmented / 主题选择器的 layoutId 滑块需要），
+    // 且去掉 strict：Popover/Dialog/Sheet 用 createPortal 挂到 body，脱离了
+    // LazyMotion 作用域，strict 下会报错/no-op 导致动画全失。
+    <LazyMotion features={domMax}>
       <div className="relative flex min-h-dvh flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
         {immersive ? null : <TopNav showSearch={location.pathname === '/'} />}
 
