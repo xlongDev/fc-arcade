@@ -231,9 +231,9 @@ export async function exportBackup(options: ExportOptions = {}): Promise<Blob> {
   files['sessions.json'] = strToU8(JSON.stringify(sessions))
   files['crcLearn.json'] = strToU8(JSON.stringify(crcLearn))
   if (settings !== null) files['settings.json'] = strToU8(settings)
+  // JSON 元信息用默认 UTF-8；第二个参数 true 会让 fflate 走 latin1，损坏中文 label。
   files['roms.json'] = strToU8(
     JSON.stringify(roms.map(({ id, size, crc32 }) => ({ id, size, crc32 }))),
-    true,
   )
   files['covers.json'] = strToU8(
     JSON.stringify(
@@ -245,7 +245,6 @@ export async function exportBackup(options: ExportOptions = {}): Promise<Blob> {
         updatedAt,
       })),
     ),
-    true,
   )
   files['saveStates.json'] = strToU8(
     JSON.stringify(
@@ -259,7 +258,6 @@ export async function exportBackup(options: ExportOptions = {}): Promise<Blob> {
         createdAt,
       })),
     ),
-    true,
   )
 
   // 二进制本体：逐个读 ArrayBuffer 并写入 zip，按 id 命名，带进度与让出
